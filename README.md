@@ -1,18 +1,17 @@
 # S.Track
 
-Construction materials procurement visibility dashboard. Replaces Excel + WhatsApp for small-to-mid construction firms. Multi-tenant SaaS.
-
-> Solo first-Node-stack project. Built in vertical slices with Claude Code.
+Construction materials procurement dashboard. Replaces Excel and WhatsApp for small-to-mid construction firms. Multi-tenant: every record scoped to a company.
 
 ## Repo layout
 ```
 /
 ├── frontend/      Next.js 16 app (Vercel deploy)
-├── backend/       Python FastAPI service (coming next sessions)
+├── backend/       Python FastAPI service (not yet scaffolded)
+├── sql/           Database design (MySQL Workbench ERD; Postgres migrations land in backend/ once scaffolded)
 ├── docs/          Project spec, context, rules, learning log
 ├── README.md
-├── AGENTS.md      Next.js 16 agent rules
-└── CLAUDE.md      Claude Code project instructions
+├── AGENTS.md
+└── CLAUDE.md
 ```
 
 ## Stack
@@ -21,15 +20,14 @@ Construction materials procurement visibility dashboard. Replaces Excel + WhatsA
 - **DB / Storage / Auth**: Supabase (Postgres + Storage + Auth)
 - **Hosting**: Vercel (frontend), Railway or Fly.io (FastAPI)
 
-## Documents to read in order
+## Documents
 
 | File | Purpose |
 |---|---|
-| `docs/Project-Context.md` | Where we left off last session. Read first. |
-| `docs/Project-Spec.md` | What we're building. The product spec. |
-| `docs/claude-rule.md` | How Claude must write code on this project (80/20, vertical slices). |
-| `docs/learned.md` | User's personal learning log. User-owned. |
-| `AGENTS.md` | Reminder: Next.js 16 has breaking changes — consult `frontend/node_modules/next/dist/docs/`. |
+| `docs/Project-Spec.md` | Product spec. |
+| `docs/Project-Context.md` | Session context log. |
+| `docs/learned.md` | Personal learning log. |
+| `AGENTS.md` | Reminder: Next.js 16 has breaking changes. Consult `frontend/node_modules/next/dist/docs/`. |
 
 ## Scripts
 Run from `frontend/`:
@@ -39,27 +37,25 @@ npm run dev     # Next.js dev server
 npm run build
 npm run lint
 ```
-FastAPI scaffolding is not in the repo yet — coming next sessions.
+FastAPI scaffolding is not in the repo yet.
 
 ---
 
 ## Tasks
 
-### Next session — finalize DB schema, start SQL
-- [ ] Lock the schema in `docs/Project-Spec.md` (table-by-table walkthrough; resolve any open questions).
+### Next session: translate ERD to Postgres
+- [ ] Translate `sql/database-table.mwb` to Postgres DDL (snake_case plural, `bigint generated always as identity`, `timestamptz`, `numeric(14,2)`, Postgres enums).
 - [ ] Create Supabase project; capture connection string + service role key in `.env.local` (do NOT commit).
-- [ ] Decide migration tooling: Alembic (with SQLAlchemy) recommended.
-- [ ] Write first migration: `companies`, `users` (with `role` enum), `projects`, `project_members`.
+- [ ] Scaffold `backend/` with FastAPI + SQLAlchemy + Alembic.
+- [ ] First migration: `companies`, `users` (with `role` enum), `projects`, `project_members`.
 - [ ] Apply migration to Supabase; verify in dashboard.
 - [ ] Add Row-Level Security (RLS) policy stubs scoped by `company_id`.
-- [ ] Commit schema + migration with a clean message.
+- [ ] Subsequent migrations: append-only event tables and `delivery_photos` with `sha256`.
 
 ### Backlog (after schema lands)
-- [ ] Scaffold FastAPI project under `backend/` with SQLAlchemy session + Supabase connection.
-- [ ] First vertical slice: `POST /material-requests` end-to-end (DB → API → Next form).
+- [ ] First vertical slice: `POST /material-requests` end-to-end (DB to API to Next form).
 - [ ] Auth wiring: Supabase Auth on Next.js, JWT verification on FastAPI.
-- [ ] Append-only event log tables (`request_events`, `order_events`, `delivery_events`).
-- [ ] Photo upload pipeline (Supabase Storage → server-side sha256 → `delivery_photos`).
+- [ ] Photo upload pipeline (Supabase Storage to server-side sha256 to `delivery_photos`).
 - [ ] Owner approval queue UI.
-- [ ] Variance calc (requested vs ordered, >10% threshold).
+- [ ] Variance calc: requested vs ordered, 10% threshold.
 - [ ] Procurement dashboard.

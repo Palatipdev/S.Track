@@ -144,6 +144,9 @@ venv/
 # OS
 .DS_Store
 
+# MySQL Workbench backup files
+*.mwb.bak
+
 # Vite logs files
 vite.config.js.timestamp-*
 vite.config.ts.timestamp-*
