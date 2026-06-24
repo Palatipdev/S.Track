@@ -73,6 +73,23 @@
   - `Request_Events_copy1` is the `Delivery_Events` placeholder. Rename the table, change `deliveryID` from `VARCHAR(45)` to `INT`, rename the FK constraint.
 - **Next**: Walk through the diagram concept-by-concept and translate to Postgres DDL: types, enums, identity columns, soft-delete, server-stamped timestamps, multi-tenant scoping, RLS policy stubs, append-only event semantics. Produce the first Alembic migration in `backend/` for `companies`, `users`, `projects`, `project_members`.
 
+### Session 2026-06-24: Postgres DDL + Supabase setup
+- **Goal**: Translate MySQL Workbench schema to Postgres DDL and apply it to a live Supabase project.
+- **Changes**:
+  - Created `sql/schema.sql` — full Postgres DDL for all 15 tables: `companies`, `users`, `projects`, `project_members`, `suppliers`, `material_requests`, `request_items`, `purchase_orders`, `order_items`, `deliveries`, `delivery_items`, `delivery_photos`, `request_events`, `order_events`, `delivery_events`.
+  - All PKs use `bigint GENERATED ALWAYS AS IDENTITY`. All timestamps `timestamptz`. All money `numeric(14,2)`. ENUMs as named types.
+  - Supabase project created (Northeast Asia — Tokyo). Data API off, RLS auto-enable on.
+  - Schema applied via Supabase SQL editor — all 15 tables confirmed live.
+  - `README.md` task list updated.
+- **Decisions**:
+  - `bigint` over `integer` for all PKs — SaaS default, avoids 2B row ceiling.
+  - `project_members` uses composite PK `(project_id, user_id)` — no surrogate needed.
+  - `approved_by` nullable on `material_requests` — requests start as `pending` with no approver yet.
+  - Audit log `payload` column is `jsonb` — each event type carries different metadata, JSON avoids a column per field.
+  - Data API disabled — FastAPI is the only entry point to the DB.
+- **Unfinished**: nothing mid-flight.
+- **Next**: scaffold `backend/` with FastAPI + SQLAlchemy + Alembic. Write first Alembic migration matching `sql/schema.sql`. First endpoint: `POST /material-requests`.
+
 <!--
 Template for the next session:
 
