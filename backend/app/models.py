@@ -1,0 +1,216 @@
+import enum
+from sqlalchemy import (
+    BigInteger, Text, DateTime, Date, Numeric, String,
+    func, ForeignKey, Enum, UniqueConstraint, PrimaryKeyConstraint
+)
+from sqlalchemy.orm import mapped_column
+from sqlalchemy.dialects.postgresql import JSONB
+from app.database import Base
+
+
+# ---------------------------------------------------------------------------
+# Enums
+# ---------------------------------------------------------------------------
+
+class UserRole(enum.Enum):
+    owner    = "owner"
+    buyer    = "buyer"
+    onsite   = "onsite"
+    factory  = "factory"
+    engineer = "engineer"
+
+
+class ProjectStatus(enum.Enum):
+    active    = "active"
+    completed = "completed"
+    on_hold   = "on_hold"
+
+
+class RequestStatus(enum.Enum):
+    pending  = "pending"
+    approved = "approved"
+    rejected = "rejected"
+
+
+class UrgencyLevel(enum.Enum):
+    low    = "low"
+    medium = "medium"
+    high   = "high"
+
+
+class OrderStatus(enum.Enum):
+    pending   = "pending"
+    delivered = "delivered"
+    cancelled = "cancelled"
+
+
+# ---------------------------------------------------------------------------
+# Tables
+# ---------------------------------------------------------------------------
+
+class Company(Base):
+    __tablename__ = "companies"
+
+    id         = mapped_column(BigInteger, primary_key=True)
+    name       = mapped_column(Text, nullable=False)
+    created_at = mapped_column(DateTime(timezone=True), nullable=False, server_default=func.now())
+
+
+class User(Base):
+    __tablename__ = "users"
+    __table_args__ = (UniqueConstraint("company_id", "email"),)
+
+    id         = mapped_column(BigInteger, primary_key=True)
+    company_id = mapped_column(BigInteger, ForeignKey("companies.id"), nullable=False)
+    email      = mapped_column(Text, nullable=False)
+    role       = mapped_column(Enum(UserRole), nullable=False)
+    deleted_at = mapped_column(DateTime(timezone=True))
+    created_at = mapped_column(DateTime(timezone=True), nullable=False, server_default=func.now())
+
+
+class Project(Base):
+    __tablename__ = "projects"
+
+    id         = mapped_column(BigInteger, primary_key=True)
+    company_id = mapped_column(BigInteger, ForeignKey("companies.id"), nullable=False)
+    name       = mapped_column(Text, nullable=False)
+    budget     = mapped_column(Numeric(14, 2), nullable=False)
+    status     = mapped_column(Enum(ProjectStatus), nullable=False, server_default="active")
+    start_date = mapped_column(Date, nullable=False)
+    end_date   = mapped_column(Date)
+    deleted_at = mapped_column(DateTime(timezone=True))
+    created_at = mapped_column(DateTime(timezone=True), nullable=False, server_default=func.now())
+
+
+class ProjectMember(Base):
+    __tablename__ = "project_members"
+    __table_args__ = (PrimaryKeyConstraint("project_id", "user_id"),)
+
+    project_id = mapped_column(BigInteger, ForeignKey("projects.id"), nullable=False)
+    user_id    = mapped_column(BigInteger, ForeignKey("users.id"), nullable=False)
+
+
+class Supplier(Base):
+    __tablename__ = "suppliers"
+
+    id         = mapped_column(BigInteger, primary_key=True)
+    company_id = mapped_column(BigInteger, ForeignKey("companies.id"), nullable=False)
+    name       = mapped_column(Text, nullable=False)
+    deleted_at = mapped_column(DateTime(timezone=True))
+    created_at = mapped_column(DateTime(timezone=True), nullable=False, server_default=func.now())
+
+
+class MaterialRequest(Base):
+    __tablename__ = "material_requests"
+
+    id           = mapped_column(BigInteger, primary_key=True)
+    company_id   = mapped_column(BigInteger, ForeignKey("companies.id"), nullable=False)
+    project_id   = mapped_column(BigInteger, ForeignKey("projects.id"), nullable=False)
+    requested_by = mapped_column(BigInteger, ForeignKey("users.id"), nullable=False)
+    status       = mapped_column(Enum(RequestStatus), nullable=False, server_default="pending")
+    urgency      = mapped_column(Enum(UrgencyLevel), nullable=False, server_default="medium")
+    reason       = mapped_column(Text)
+    approved_by  = mapped_column(BigInteger, ForeignKey("users.id"))
+    approved_at  = mapped_column(DateTime(timezone=True))
+    deleted_at   = mapped_column(DateTime(timezone=True))
+    created_at   = mapped_column(DateTime(timezone=True), nullable=False, server_default=func.now())
+
+
+class RequestItem(Base):
+    __tablename__ = "request_items"
+
+    id                  = mapped_column(BigInteger, primary_key=True)
+    material_request_id = mapped_column(BigInteger, ForeignKey("material_requests.id"), nullable=False)
+    item_name           = mapped_column(Text, nullable=False)
+    quantity            = mapped_column(Numeric(14, 2), nullable=False)
+    unit                = mapped_column(Text, nullable=False)
+
+
+class PurchaseOrder(Base):
+    __tablename__ = "purchase_orders"
+
+    id                  = mapped_column(BigInteger, primary_key=True)
+    company_id          = mapped_column(BigInteger, ForeignKey("companies.id"), nullable=False)
+    material_request_id = mapped_column(BigInteger, ForeignKey("material_requests.id"), nullable=False)
+    supplier_id         = mapped_column(BigInteger, ForeignKey("suppliers.id"), nullable=False)
+    total_cost          = mapped_column(Numeric(14, 2), nullable=False)
+    expected_delivery   = mapped_column(Date, nullable=False)
+    status              = mapped_column(Enum(OrderStatus), nullable=False, server_default="pending")
+    deleted_at          = mapped_column(DateTime(timezone=True))
+    created_at          = mapped_column(DateTime(timezone=True), nullable=False, server_default=func.now())
+
+
+class OrderItem(Base):
+    __tablename__ = "order_items"
+
+    id                = mapped_column(BigInteger, primary_key=True)
+    purchase_order_id = mapped_column(BigInteger, ForeignKey("purchase_orders.id"), nullable=False)
+    item_name         = mapped_column(Text, nullable=False)
+    quantity          = mapped_column(Numeric(14, 2), nullable=False)
+    unit              = mapped_column(Text, nullable=False)
+    unit_cost         = mapped_column(Numeric(14, 2), nullable=False)
+
+
+class Delivery(Base):
+    __tablename__ = "deliveries"
+
+    id                = mapped_column(BigInteger, primary_key=True)
+    company_id        = mapped_column(BigInteger, ForeignKey("companies.id"), nullable=False)
+    purchase_order_id = mapped_column(BigInteger, ForeignKey("purchase_orders.id"), nullable=False)
+    confirmed_by      = mapped_column(BigInteger, ForeignKey("users.id"), nullable=False)
+    gps_lat           = mapped_column(Numeric(9, 6))
+    gps_lng           = mapped_column(Numeric(9, 6))
+    created_at        = mapped_column(DateTime(timezone=True), nullable=False, server_default=func.now())
+
+
+class DeliveryItem(Base):
+    __tablename__ = "delivery_items"
+
+    id            = mapped_column(BigInteger, primary_key=True)
+    delivery_id   = mapped_column(BigInteger, ForeignKey("deliveries.id"), nullable=False)
+    order_item_id = mapped_column(BigInteger, ForeignKey("order_items.id"), nullable=False)
+    received_qty  = mapped_column(Numeric(14, 2), nullable=False)
+
+
+class DeliveryPhoto(Base):
+    __tablename__ = "delivery_photos"
+    __table_args__ = (UniqueConstraint("delivery_id", "sha256_hash"),)
+
+    id                 = mapped_column(BigInteger, primary_key=True)
+    delivery_id        = mapped_column(BigInteger, ForeignKey("deliveries.id"), nullable=False)
+    file_key           = mapped_column(Text, nullable=False)
+    sha256_hash        = mapped_column(String(64), nullable=False)
+    server_uploaded_at = mapped_column(DateTime(timezone=True), nullable=False, server_default=func.now())
+
+
+class RequestEvent(Base):
+    __tablename__ = "request_events"
+
+    id                  = mapped_column(BigInteger, primary_key=True)
+    material_request_id = mapped_column(BigInteger, ForeignKey("material_requests.id"), nullable=False)
+    actor_id            = mapped_column(BigInteger, ForeignKey("users.id"), nullable=False)
+    event_type          = mapped_column(Text, nullable=False)
+    payload             = mapped_column(JSONB)
+    created_at          = mapped_column(DateTime(timezone=True), nullable=False, server_default=func.now())
+
+
+class OrderEvent(Base):
+    __tablename__ = "order_events"
+
+    id                = mapped_column(BigInteger, primary_key=True)
+    purchase_order_id = mapped_column(BigInteger, ForeignKey("purchase_orders.id"), nullable=False)
+    actor_id          = mapped_column(BigInteger, ForeignKey("users.id"), nullable=False)
+    event_type        = mapped_column(Text, nullable=False)
+    payload           = mapped_column(JSONB)
+    created_at        = mapped_column(DateTime(timezone=True), nullable=False, server_default=func.now())
+
+
+class DeliveryEvent(Base):
+    __tablename__ = "delivery_events"
+
+    id          = mapped_column(BigInteger, primary_key=True)
+    delivery_id = mapped_column(BigInteger, ForeignKey("deliveries.id"), nullable=False)
+    actor_id    = mapped_column(BigInteger, ForeignKey("users.id"), nullable=False)
+    event_type  = mapped_column(Text, nullable=False)
+    payload     = mapped_column(JSONB)
+    created_at  = mapped_column(DateTime(timezone=True), nullable=False, server_default=func.now())

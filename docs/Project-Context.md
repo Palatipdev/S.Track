@@ -90,6 +90,22 @@
 - **Unfinished**: nothing mid-flight.
 - **Next**: scaffold `backend/` with FastAPI + SQLAlchemy + Alembic. Write first Alembic migration matching `sql/schema.sql`. First endpoint: `POST /material-requests`.
 
+### Session 2026-06-26: FastAPI backend scaffold + SQLAlchemy models
+- **Goal**: Scaffold the FastAPI backend and write SQLAlchemy models for all 15 tables.
+- **Changes**:
+  - Created `backend/` with Python venv, FastAPI, SQLAlchemy, Alembic, psycopg2, python-dotenv.
+  - `backend/app/database.py`: SQLAlchemy engine + `get_db()` session factory, reads `DATABASE_URL` from `.env`.
+  - `backend/app/main.py`: FastAPI app with `GET /health` route.
+  - `backend/app/models.py`: all 15 SQLAlchemy models matching `sql/schema.sql`. All 5 enums as Python `enum.Enum` classes.
+  - `backend/alembic.ini` + `backend/migrations/`: Alembic initialised, `env.py` wired to read `DATABASE_URL` from `.env`.
+  - Alembic stamped at head (schema was already applied manually via SQL editor last session).
+  - Supabase connection confirmed working via pooler URL (direct `db.` host had DNS issues on this network).
+- **Decisions**:
+  - Used pooler connection string (Transaction mode) instead of direct — direct host failed DNS resolution.
+  - Stamped Alembic baseline rather than autogenerating a drop migration — models were written after schema was already live.
+- **Unfinished**: `.env` not committed (correct — secrets stay local).
+- **Next**: First vertical slice — `POST /material-requests` endpoint (Pydantic schema → FastAPI route → DB insert).
+
 <!--
 Template for the next session:
 

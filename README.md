@@ -51,10 +51,15 @@ FastAPI scaffolding is not in the repo yet — coming next sessions.
 - [ ] Capture Supabase connection string + service role key in `.env.local` (do NOT commit).
 - [ ] Add Row-Level Security (RLS) policy stubs scoped by `company_id`.
 
-### Next session — backend scaffold
-- [ ] Scaffold `backend/` with FastAPI + SQLAlchemy + Alembic.
-- [ ] Write first Alembic migration matching `sql/schema.sql`.
-- [ ] First vertical slice: `POST /material-requests` end-to-end (DB → API → Next form).
+### Backend scaffold — done
+- [x] Scaffold `backend/` with FastAPI + SQLAlchemy + Alembic.
+- [x] SQLAlchemy models for all 15 tables in `backend/app/models.py`.
+- [x] Alembic initialised and stamped at baseline.
+- [x] `GET /health` endpoint confirmed working.
+
+### Next session — first vertical slice
+- [ ] Pydantic schema for `material_requests`.
+- [ ] `POST /material-requests` endpoint end-to-end (DB → API → Next form).
 
 ### Backlog
 - [ ] Auth wiring: Supabase Auth on Next.js, JWT verification on FastAPI.
