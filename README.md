@@ -57,13 +57,21 @@ FastAPI scaffolding is not in the repo yet — coming next sessions.
 - [x] Alembic initialised and stamped at baseline.
 - [x] `GET /health` endpoint confirmed working.
 
-### Next session — first vertical slice
-- [ ] Pydantic schema for `material_requests`.
-- [ ] `POST /material-requests` endpoint end-to-end (DB → API → Next form).
+### First vertical slice — done
+- [x] Pydantic schemas for `material_requests` + nested `request_items`.
+- [x] `POST /material-requests` endpoint (header + items insert).
+- [x] JWT verification on FastAPI via Supabase client (`get_current_user`).
+- [x] `company_id` / `requested_by` filled from the verified token, confirmed with a 200.
+
+### Next session
+- [ ] `GET /material-requests` (list, scoped by `company_id`).
+- [ ] Create-project / create-user endpoints (replace hand-inserted test data).
+- [ ] Start Next.js frontend: login + material request form.
 
 ### Backlog
-- [ ] Auth wiring: Supabase Auth on Next.js, JWT verification on FastAPI.
+- [ ] Supabase Auth on the Next.js side (frontend login flow).
 - [ ] Photo upload pipeline (Supabase Storage → server-side sha256 → `delivery_photos`).
 - [ ] Owner approval queue UI.
 - [ ] Variance calc (requested vs ordered, >10% threshold).
 - [ ] Procurement dashboard.
+- [ ] Add Row-Level Security (RLS) policy stubs scoped by `company_id`.

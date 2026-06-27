@@ -4,6 +4,8 @@ from app.schemas import MaterialRequest
 from app.database import get_db
 from app.models import MaterialRequest as MaterialRequestModel
 from app.models import RequestItem as RequestItemModel
+from app.models import User
+from app.auth import get_current_user
 
 app = FastAPI()
 
@@ -14,9 +16,9 @@ def health():
 
 
 @app.post("/material-requests")
-def create_material_request(body: MaterialRequest, db: Session = Depends(get_db)):
+def create_material_request(body: MaterialRequest, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
     # TODO(user): insert a new MaterialRequest row into the DB and return it
-    new_request = MaterialRequestModel(project_id=body.project_id , urgency=body.urgency, reason=body.reason)
+    new_request = MaterialRequestModel(project_id=body.project_id , urgency=body.urgency, reason=body.reason, company_id = current_user.company_id , requested_by = current_user.id)
     db.add(new_request)
 
     db.commit()
@@ -31,5 +33,5 @@ def create_material_request(body: MaterialRequest, db: Session = Depends(get_db)
     return new_request
 
 
-    
+
 

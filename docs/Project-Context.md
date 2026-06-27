@@ -106,6 +106,25 @@
 - **Unfinished**: `.env` not committed (correct — secrets stay local).
 - **Next**: First vertical slice — `POST /material-requests` endpoint (Pydantic schema → FastAPI route → DB insert).
 
+### Session 2026-06-27: First vertical slice + auth wiring
+- **Goal**: Ship `POST /material-requests` end-to-end and wire Supabase Auth into the backend.
+- **Changes**:
+  - `backend/app/schemas.py`: Pydantic input models `RequestItemIn` and `MaterialRequest` (accepts nested `items` list).
+  - `backend/app/main.py`: `POST /material-requests` — inserts the request header, then loops `body.items` into `request_items`. Pulls `company_id` + `requested_by` from the authenticated user, not the request body.
+  - `backend/app/auth.py`: `get_current_user` dependency. Verifies the Supabase JWT via the `supabase` Python client (`supabase.auth.get_user(token)`), then resolves the token's email to a `User` row.
+  - Installed `python-jose` (initial attempt) then `supabase` client. `.env` gained `SUPABASE_JWT_SECRET`, `SUPABASE_URL`, `SUPABASE_ANON_KEY`.
+  - Created test data: one `companies` row (id 1), one `users` row (id 1, owner), one auth user in Supabase Auth, one `projects` row (id 4).
+  - Confirmed working: 200 response, `company_id`/`requested_by` correctly filled from the token.
+- **Decisions**:
+  - Switched JWT verification from local HS256 decode to the Supabase client. Project uses ES256 asymmetric signing keys, so the shared-secret HS256 path failed. Letting the Supabase client validate avoids managing public keys by hand.
+  - Items are accepted nested in the request body (one POST), then split: one `material_requests` row + N `request_items` rows, committed in two phases so `new_request.id` exists before inserting items.
+- **Debugging notes (cost ~1h)**:
+  - PowerShell `Invoke-RestMethod` word-wraps long output; copying `access_token` from the console pulled in embedded spaces → malformed JWT → "requires a valid Bearer token". Fix: `$r.access_token | Set-Clipboard`.
+  - Must run uvicorn and the token command in two separate terminals.
+  - `project_id: 0` failed the FK to `projects`; needed a real project row.
+- **Unfinished**: `company_id`/`requested_by` proven via auth, but no create-project or create-user endpoints yet (test data inserted by hand). No `GET /material-requests` yet.
+- **Next**: `GET /material-requests` (list scoped by `company_id`), or build out project/supplier create endpoints. Frontend not started.
+
 <!--
 Template for the next session:
 
