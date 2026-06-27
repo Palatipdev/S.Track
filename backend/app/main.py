@@ -32,6 +32,12 @@ def create_material_request(body: MaterialRequest, db: Session = Depends(get_db)
     db.refresh(new_request)
     return new_request
 
+@app.get("/material-requests")
+def get_all_material_request(db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+    allRequest = db.query(MaterialRequestModel).filter(MaterialRequestModel.company_id == current_user.company_id).all()
+    return allRequest
+
+
 
 
 
