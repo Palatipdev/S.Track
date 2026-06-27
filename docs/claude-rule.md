@@ -77,3 +77,4 @@ At the end of a coding session, Claude updates:
 - `README.md` task list → mark done / add follow-ups.
 
 Claude does NOT update `learned.md` (user-owned).
+`
