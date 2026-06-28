@@ -125,6 +125,25 @@
 - **Unfinished**: `company_id`/`requested_by` proven via auth, but no create-project or create-user endpoints yet (test data inserted by hand). No `GET /material-requests` yet.
 - **Next**: `GET /material-requests` (list scoped by `company_id`), or build out project/supplier create endpoints. Frontend not started.
 
+### Session 2026-06-28: Frontend login + dashboard
+- **Goal**: Build the Next.js login page and a basic dashboard that fetches real data from the API.
+- **Changes**:
+  - `frontend/app/page.tsx` — created root page that redirects to `/login`.
+  - `frontend/app/login/page.tsx` — login form with email/password, calls `supabase.auth.signInWithPassword`, redirects to `/dashboard` on success.
+  - `frontend/app/dashboard/page.tsx` — fetches `GET /material-requests` with the Supabase session token, renders a list of requests.
+  - `frontend/lib/supabase.ts` — Supabase JS client for the frontend.
+  - `frontend/.env.local` — `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_ANON_KEY`.
+  - `backend/app/main.py` — added CORS middleware allowing `http://localhost:3000`.
+- **Decisions**:
+  - Used `supabase.auth.getSession()` on the frontend to get the access token for API calls.
+  - `any[]` type for requests state — good enough for now, can be typed properly later.
+- **Debugging notes**:
+  - Turbopack panicked because `app/page.tsx` was missing. Fix: create it. Also clear `.next` cache with `Remove-Item -Recurse -Force .next` when Turbopack has stale state.
+  - CORS blocked API calls from the browser — fixed by adding `CORSMiddleware` to FastAPI.
+  - `next/router` is the old Pages Router import. App Router uses `next/navigation`.
+- **Unfinished**: Dashboard is a plain list, no styling. Items not shown (separate table). No logout button.
+- **Next**: Style the dashboard with Tailwind. Add logout. Start the material request submission form on the frontend.
+
 <!--
 Template for the next session:
 

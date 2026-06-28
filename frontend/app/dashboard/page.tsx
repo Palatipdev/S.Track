@@ -2,9 +2,10 @@
 import { supabase } from "@/lib/supabase"
 import { useState } from "react"
 import { useEffect } from "react"
+import { useRouter } from "next/navigation"
 
 export default function dashboardPage() {
-
+    const router = useRouter()
     const [requests, setRequests] = useState<any[]>([])
 
     const getSupabaseToken = async () => {
@@ -40,14 +41,29 @@ export default function dashboardPage() {
     },
     [])
 
+    async function signOut(){
+        const {error} = await supabase.auth.signOut()
+        if (error){
+            console.error("cant log out")
+        } else{
+            router.push("/login")
+        }
+    }
+
     return(
-        <div>
-            <h2>Material Requests:</h2>
-            <ul>
-                {requests.map((req,idx) => (
-                    <li key={req.id}>{req.project_id} — {req.status} — {req.urgency}</li>
-                ))}
-            </ul>
-        </div>
+        <main>
+            <div>
+                <h2>Material Requests:</h2>
+                <ul>
+                    {requests.map((req,idx) => (
+                        <li key={req.id}>{req.project_id} — {req.status} — {req.urgency}</li>
+                    ))}
+                </ul>
+            </div>
+
+            <div>
+                <button type="submit" onClick={signOut}>Sign out</button>
+            </div>
+        </main>
     )
 }

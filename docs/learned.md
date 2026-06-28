@@ -9,7 +9,7 @@ Capture things you actually understood (not just what got built). Vibe-coded out
 ## Format
 
 ```
-### YYYY-MM-DD — <topic>
+### YYYY-DD-MM — <topic>
 - What I learned (in my own words):
 - Why it matters / where it applies:
 - Open question I still have:
@@ -63,4 +63,19 @@ Capture things you actually understood (not just what got built). Vibe-coded out
   - Still don't know what anon really is. Basically the authorize process is still unclear, why did we need access token? 
   - is what we did manual testing. for example if we have frontend done, when user want to do material request they would need to be authorized using the access key which is generated in the backend automatically. But since we dont have that we need to run command with anon key and user password to generate and input that access key so that we can have access to material request endpoint?
   - Is Auth wiring the idea of generating test user,companies etc. then run endpoints, or is it the process or linking user id with company id inside auth.py so that we can use endpoint with real data?
+
+
+
+### 2026-28-06 — Login & Dashboard page (frontend) connection with Supabase auth and GET endpoints (backend)
+- What I learned (in my own words):
+  - Refresher on react native's html body and that it is similar to next.js. Revision on how to write an async function
+  - How to integrate supabase auth so that we can verify frontend's input (credential) against credentials that are stored inside supabase user's row
+  - Writing another supabase integration to retrive user's access token and use that in an async function to get their corresponded material request using the GET endpoint we wrote yesterday
+  - Started to understand the logic of getting the access token and why it is necessary.
+- Why it matters / where it applies:
+  - Being able to understand and integrate connections between frontend and backend are skills that are sought for within the industry and make a well rounded engineer
+  - Most page in the future will rely on user input to retreive something from the database via using these endpoints
+- Open question I still have:
+  - No questions just still lost on the general html and javascript syntaxes especially the async functions and the whole writing supabase in the frontend stuff.
+
 <!-- Add new entries above this line -->

@@ -63,10 +63,17 @@ FastAPI scaffolding is not in the repo yet — coming next sessions.
 - [x] JWT verification on FastAPI via Supabase client (`get_current_user`).
 - [x] `company_id` / `requested_by` filled from the verified token, confirmed with a 200.
 
+### Frontend — in progress
+- [x] Login page with Supabase Auth (`frontend/app/login/page.tsx`).
+- [x] Dashboard page fetching `GET /material-requests` and rendering the list.
+- [x] CORS wired on FastAPI (`CORSMiddleware`).
+- [x] Root `app/page.tsx` redirects to `/login`.
+
 ### Next session
-- [ ] `GET /material-requests` (list, scoped by `company_id`).
+- [ ] Style the dashboard with Tailwind.
+- [ ] Add logout button.
+- [ ] Material request submission form on the frontend.
 - [ ] Create-project / create-user endpoints (replace hand-inserted test data).
-- [ ] Start Next.js frontend: login + material request form.
 
 ### Backlog
 - [ ] Supabase Auth on the Next.js side (frontend login flow).
