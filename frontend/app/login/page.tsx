@@ -15,7 +15,7 @@ export default function LoginPage() {
             if (error){
                 alert("Wrong Credentials")
             } else{
-                alert("./dashboard")
+                router.push("/dashboard")
             }
 
     }
