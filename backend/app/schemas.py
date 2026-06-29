@@ -12,4 +12,7 @@ class MaterialRequest(BaseModel):
     urgency: Optional[str] = "medium"
     reason: Optional[str] = None
     items: list[RequestItemIn]
+
+class ApproveRequest(BaseModel):
+    status: str
     

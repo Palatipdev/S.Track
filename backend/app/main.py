@@ -5,6 +5,7 @@ from app.database import get_db
 from app.models import MaterialRequest as MaterialRequestModel
 from app.models import RequestItem as RequestItemModel
 from app.models import User
+from app.schemas import ApproveRequest
 from app.auth import get_current_user
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -44,6 +45,15 @@ def create_material_request(body: MaterialRequest, db: Session = Depends(get_db)
 def get_all_material_request(db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
     allRequest = db.query(MaterialRequestModel).filter(MaterialRequestModel.company_id == current_user.company_id).all()
     return allRequest
+
+@app.patch("/material-requests/{request_id}")
+def approveOrReject(request_id: int , body: ApproveRequest, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+    if current_user.role.value != "owner":
+        raise HTTPException(status_code=403, detail="Not authorized")
+    request = db.query(MaterialRequestModel).filter(MaterialRequestModel.id == request_id).first()
+    request.status = body.status
+    db.commit()
+    return request
 
 
 
