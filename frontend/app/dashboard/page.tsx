@@ -70,32 +70,24 @@ export default function dashboardPage() {
     setItemsMap(prev => ({...prev, [requestId]: data}))
   }
 
+  async function fetchData() {
+    const token = await getSupabaseToken();
+    if (!token) return;
+    const response = await fetch(`http://localhost:8000/material-requests`, {
+      headers: { Authorization: `Bearer ${token}` },
+      method: "GET",
+    });
+    const data = await response.json();
+    setRequests(data);
+  }
+
   useEffect(() => {
-    async function fetchData() {
-      const token = await getSupabaseToken();
-      if (!token) {
-        console.error("No token found");
-        return null;
-      }
-
-      const response = await fetch(`http://localhost:8000/material-requests`, {
-        headers: { Authorization: `Bearer ${token}` },
-        method: "GET",
-      });
-
-      const data = await response.json();
-      setRequests(data);
-    }
     fetchData();
   }, []);
 
   async function handleAddRequest() {
     const token = await getSupabaseToken();
-    if (!token) {
-      console.error("No token found");
-      return null;
-    }
-
+    if (!token) return;
     const response = await fetch(`http://localhost:8000/material-requests`, {
       method: "POST",
       headers: {
@@ -111,6 +103,23 @@ export default function dashboardPage() {
     });
     if (response.ok) {
       setAddRequest(false);
+      await fetchData();
+    }
+  }
+
+  async function approve(requestId: number, status: string) {
+    const token = await getSupabaseToken();
+    if (!token) return;
+    const response = await fetch(`http://localhost:8000/material-requests/${requestId}`, {
+      method: "PATCH",
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ status }),
+    });
+    if (response.ok) {
+      await fetchData();
     }
   }
 
@@ -123,24 +132,40 @@ export default function dashboardPage() {
     }
   }
 
+  const pending  = requests.filter(r => r.status === 'pending')
+  const approved = requests.filter(r => r.status === 'approved')
+  const rejected = requests.filter(r => r.status === 'rejected')
+
+  function renderRequests(list: any[]) {
+    return (
+      <ul>
+        {list.map((req) => (
+          <li key={req.id} onClick={() => toggleExpand(req.id)} style={{cursor: 'pointer'}}>
+            {req.project_id} — {req.status} — {req.urgency}
+            <button type="button" onClick={(e) => { e.stopPropagation(); approve(req.id, 'approved') }}>Approve</button>
+            <button type="button" onClick={(e) => { e.stopPropagation(); approve(req.id, 'rejected') }}>Reject</button>
+            {expandedIds.has(req.id) && (
+              <ul>
+                {(itemsMap[req.id] || []).map((item, idx) => (
+                  <li key={idx}>{item.item_name} — {item.quantity} {item.unit}</li>
+                ))}
+              </ul>
+            )}
+          </li>
+        ))}
+      </ul>
+    )
+  }
+
   return (
     <main>
       <div>
-        <h2>Material Requests:</h2>
-        <ul>
-          {requests.map((req, idx) => (
-            <li key={req.id} onClick={() => toggleExpand(req.id)} style = {{cursor: `pointer`}}>
-              {req.project_id} — {req.status} — {req.urgency}
-              {expandedIds.has(req.id) && (
-                <ul>
-                  {(itemsMap[req.id] || []).map((item, idx) => (
-                    <li key = {idx}>{item.item_name} — {item.quantity} {item.unit}</li>
-                  ))}
-                </ul>
-              )}
-            </li>
-          ))}
-        </ul>
+        <h2>Pending</h2>
+        {renderRequests(pending)}
+        <h2>Approved</h2>
+        {renderRequests(approved)}
+        <h2>Rejected</h2>
+        {renderRequests(rejected)}
       </div>
 
       <div className="signout">
