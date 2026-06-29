@@ -8,6 +8,8 @@ export default function dashboardPage() {
   const router = useRouter();
   const [requests, setRequests] = useState<any[]>([]);
   const [addRequest, setAddRequest] = useState(false);
+  const [expandedIds, setExpandedIds] = useState<Set<number>>(new Set())
+  const [itemsMap, setItemsMap] = useState<Record<number, any[]>>({})
 
   const [projectId, setProjectId] = useState("");
   const [urgency, setUrgency] = useState("medium");
@@ -44,6 +46,28 @@ export default function dashboardPage() {
     setItemName("");
     setItemQuantity("");
     setItemUnit("");
+  }
+  function toggleExpand(id:number){
+    setExpandedIds(prev => {
+      const next = new Set(prev)
+      if (next.has(id)) {
+        next.delete(id)
+      } else{
+        next.add(id)
+        fetchItems(id)
+      }
+      return next
+    })
+  }
+  async function fetchItems(requestId: number) {
+    const token = await getSupabaseToken()
+    if (!token) return
+    const response = await fetch(`http://localhost:8000/material-requests/${requestId}/items`, {
+      headers: {Authorization: `Bearer ${token}`},
+      method: "GET"
+    });
+    const data = await response.json()
+    setItemsMap(prev => ({...prev, [requestId]: data}))
   }
 
   useEffect(() => {
@@ -105,8 +129,15 @@ export default function dashboardPage() {
         <h2>Material Requests:</h2>
         <ul>
           {requests.map((req, idx) => (
-            <li key={req.id}>
+            <li key={req.id} onClick={() => toggleExpand(req.id)} style = {{cursor: `pointer`}}>
               {req.project_id} — {req.status} — {req.urgency}
+              {expandedIds.has(req.id) && (
+                <ul>
+                  {(itemsMap[req.id] || []).map((item, idx) => (
+                    <li key = {idx}>{item.item_name} — {item.quantity} {item.unit}</li>
+                  ))}
+                </ul>
+              )}
             </li>
           ))}
         </ul>

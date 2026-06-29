@@ -4,10 +4,27 @@ Rules Claude must follow when writing code in this project. Read this at the sta
 
 ---
 
+## 0. HIGHEST PRIORITY — Speed vs Learning Split (updated 2026-06-29)
+
+**Claude writes repeated patterns directly into the codebase. User writes genuinely new patterns only.**
+
+- **Claude writes**: anything the user has already done before — another GET, another POST, another React fetch call, boilerplate, repeated schema/model patterns.
+- **User writes**: anything genuinely new — a new concept, a new tool, a new pattern never seen before in this project.
+- "New" means a concept or pattern the user has not yet implemented themselves, not just a different endpoint.
+- Do NOT give code snippets for the user to transcribe letter-by-letter on repeated patterns. Write it directly.
+- DO hand off new patterns with hints and let the user attempt first.
+
+Examples of what user writes: their first PATCH endpoint, their first Set/Record state, their first file upload, RLS policies, variance calculations.
+Examples of what Claude writes directly: every subsequent GET/POST/PATCH endpoint, every subsequent React fetch/state pattern.
+
+**Periodic recall tests**: After writing 3–4 instances of the same pattern, randomly assign the next one to the user as a solo task. Claude acts as tutor/crutch only — hints and error fixes, no writing the code. This keeps retention sharp without slowing shipping on every repetition.
+
+---
+
 ## 1. The 80 / 20 Split
 
 - **Claude writes ~80% of the code. The user writes the remaining ~20%.**
-- The 20% is intentionally where the user learns. Claude must leave clear, marked gaps for the user to complete.
+- The 20% is intentionally where the user learns — **only on genuinely new patterns** (see Rule 0).
 - When stopping for the user's 20%, mark it explicitly:
   ```ts
   // TODO(user): implement the validation check here

@@ -79,14 +79,17 @@ Capture things you actually understood (not just what got built). Vibe-coded out
   - No questions just still lost on the general html and javascript syntaxes especially the async functions and the whole writing supabase in the frontend stuff.
 
   ### 2026-29-06 — Material-Request and Items submission through frontend via POST endpoint
+  ## Added PATCH endpoint for owner changing status of material request
 - What I learned (in my own words):
   - integrated supabase and endpoint with typescript inside dashboard page for POST material-request endpoint
   - Starting to understand react and typescript syntaxes and usecase e.g. normal function and async function. And different useState syntax e.g. () => ... and that someFunction() runs automatically when opening the page
   - Saw differences in calling endpoint types such as GET calls and set a state whereas POST use JSON.stringify to then pass the object into FASTAPI
+  - PATCH is used for changing a current attributes's state of row that already exist inside of the database
 - Why it matters / where it applies:
   - Understanding pattern recognition in react and typescript syntax will compound into more efficient coding
   - Understanding the structure between endpoints and frontend
 - Open question I still have:
   - N/A
+
 
 <!-- Add new entries above this line -->

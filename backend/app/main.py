@@ -55,6 +55,12 @@ def approveOrReject(request_id: int , body: ApproveRequest, db: Session = Depend
     db.commit()
     return request
 
+@app.get("/material-requests/{request_id}/items")
+def show_request_items(request_id: int, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+    items = db.query(RequestItemModel).filter(RequestItemModel.material_request_id == request_id).all()
+    return items
+
+
 
 
 
