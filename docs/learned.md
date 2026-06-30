@@ -91,5 +91,48 @@ Capture things you actually understood (not just what got built). Vibe-coded out
 - Open question I still have:
   - N/A
 
+  ### 2026-30-07 — POST Endpoint for purchase order , Splitting current request by status categorically in frontend
+- What I learned (in my own words):
+  - Revision for writing POST endpoint for purchasing a requested order
+    - body must come before depends arguments
+    - db need to add , commit, refresh before able to loop through that added object
+  - You could wrap react component inside of a function in typescript then proceed to print them via filtering (Status category)
+    
+- Why it matters / where it applies:
+  -  API endpoints and react + typescript tech. useful patterns.
+- Open question I still have:
+  - I am just still unsure about how to handle the other backend stuff like ids and things that arent passed from the frontend and can't be calculated
+
+  ### 2026-01-07 — 
+- What I learned (in my own words):
+  - 
+- Why it matters / where it applies:
+  - 
+- Open question I still have:
+  - 
+
+  ### 2026-02-07 — 
+- What I learned (in my own words):
+  - 
+- Why it matters / where it applies:
+  - 
+- Open question I still have:
+  - 
+
+  ### 2026-03-07 — 
+- What I learned (in my own words):
+  - 
+- Why it matters / where it applies:
+  - 
+- Open question I still have:
+  - 
+
+  ### 2026-04-07 — 
+- What I learned (in my own words):
+  - 
+- Why it matters / where it applies:
+  - 
+- Open question I still have:
+  - 
 
 <!-- Add new entries above this line -->
