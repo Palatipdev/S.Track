@@ -114,6 +114,7 @@ CREATE TABLE purchase_orders (
 CREATE TABLE order_items (
   id                bigint        NOT NULL GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
   purchase_order_id bigint        NOT NULL REFERENCES purchase_orders(id),
+  request_item_id   bigint        REFERENCES request_items(id),  -- the request line this order fulfills; NULL = ordered but never requested (fraud signal)
   item_name         text          NOT NULL,
   quantity          numeric(14,2) NOT NULL,
   unit              text          NOT NULL,

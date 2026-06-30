@@ -7,6 +7,7 @@ import { useRouter } from "next/navigation";
 export default function dashboardPage() {
   const router = useRouter();
   const [requests, setRequests] = useState<any[]>([]);
+  const [purchaseOrders, setPurchaseOrders] = useState<any[]>([]);
   const [addRequest, setAddRequest] = useState(false);
   const [expandedIds, setExpandedIds] = useState<Set<number>>(new Set())
   const [itemsMap, setItemsMap] = useState<Record<number, any[]>>({})
@@ -81,8 +82,19 @@ export default function dashboardPage() {
     setRequests(data);
   }
 
+  async function fetchPurchaseOrders() {
+    const token = await getSupabaseToken();
+    if (!token) return;
+    const response = await fetch(`http://localhost:8000/purchase-orders`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    const data = await response.json();
+    setPurchaseOrders(data);
+  }
+
   useEffect(() => {
     fetchData();
+    fetchPurchaseOrders();
   }, []);
 
   async function handleAddRequest() {
@@ -136,6 +148,7 @@ export default function dashboardPage() {
   const approved = requests.filter(r => r.status === 'approved')
   const rejected = requests.filter(r => r.status === 'rejected')
 
+
   function renderRequests(list: any[]) {
     return (
       <ul>
@@ -156,6 +169,22 @@ export default function dashboardPage() {
       </ul>
     )
   }
+  function renderOrders(list: any[]){
+    return(
+      <ul>
+        {list.map((purchase_order) => (
+          <li key={purchase_order.order.id}>
+            {purchase_order.order.id} — {purchase_order.order.supplier_id} — {purchase_order.order.total_cost} — {purchase_order.order.status}
+              <ul>
+                {purchase_order.item_variances.map((val: any, idx: number) => (
+                  <li key = {idx} style = {{color: Math.abs(val.variance_pct) > 10 ? 'red' : 'white'}}> {val.request_item_id} — {val.item_name} — {val.quantity} — {val.variance_pct?.toFixed(1)}% </li>
+                ))}
+              </ul>
+          </li>
+        ))}
+      </ul>
+    )
+  }
 
   return (
     <main>
@@ -166,6 +195,11 @@ export default function dashboardPage() {
         {renderRequests(approved)}
         <h2>Rejected</h2>
         {renderRequests(rejected)}
+      </div>
+
+      <div>
+        <h2>Orders:</h2>
+        {renderOrders(purchaseOrders)}
       </div>
 
       <div className="signout">

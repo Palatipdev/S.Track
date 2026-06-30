@@ -145,6 +145,7 @@ class OrderItem(Base):
 
     id                = mapped_column(BigInteger, primary_key=True)
     purchase_order_id = mapped_column(BigInteger, ForeignKey("purchase_orders.id"), nullable=False)
+    request_item_id   = mapped_column(BigInteger, ForeignKey("request_items.id"))
     item_name         = mapped_column(Text, nullable=False)
     quantity          = mapped_column(Numeric(14, 2), nullable=False)
     unit              = mapped_column(Text, nullable=False)

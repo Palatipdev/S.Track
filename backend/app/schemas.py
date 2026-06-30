@@ -18,9 +18,10 @@ class ApproveRequest(BaseModel):
     status: str
     
 class OrderItemIn(BaseModel):
+    request_item_id: int
     item_name: str
     quantity: Decimal
-    unit: str 
+    unit: str
     unit_cost: Decimal
 
 class PurchaseOrderIn(BaseModel):
@@ -28,3 +29,13 @@ class PurchaseOrderIn(BaseModel):
     supplier_id: int
     expected_delivery: date
     items: list[OrderItemIn]
+
+class DeliveryItemIn(BaseModel):
+    order_item_id: int
+    received_qty: Decimal
+
+class DeliveryIn(BaseModel):
+    purchase_order_id: int
+    gps_lat: Optional[Decimal] = None
+    gps_lng: Optional[Decimal] = None
+    items: list[DeliveryItemIn]

@@ -10,6 +10,10 @@ from app.auth import get_current_user
 from app.schemas import PurchaseOrderIn
 from app.models import PurchaseOrder as PurchaseOrderModel
 from app.models import OrderItem as OrderItemModel
+from app.models import Delivery as DeliveryModel
+from app.models import DeliveryItem as DeliveryItemModel
+from app.schemas import DeliveryItemIn
+from app.schemas import DeliveryIn
 
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -88,12 +92,52 @@ def purchase_order(body: PurchaseOrderIn, db: Session = Depends(get_db), current
     db.refresh(newPurchase)
 
     for item in body.items:
-
-        newItemOrder =  OrderItemModel(purchase_order_id= newPurchase.id, item_name= item.item_name, quantity= item.quantity, unit= item.unit, unit_cost= item.unit_cost )
+        newItemOrder =  OrderItemModel(purchase_order_id= newPurchase.id, item_name= item.item_name, quantity= item.quantity, unit= item.unit, unit_cost= item.unit_cost, request_item_id = item.request_item_id )
         db.add(newItemOrder)
 
     db.commit()
     return newPurchase
 
+@app.get("/purchase-orders")
+def get_purchase_orders(db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+    orders = db.query(PurchaseOrderModel).filter(PurchaseOrderModel.company_id == current_user.company_id).all()
+    result = []
+    for order in orders:
+        request_items = db.query(RequestItemModel).filter(RequestItemModel.material_request_id == order.material_request_id).all()
+        order_items = db.query(OrderItemModel).filter(OrderItemModel.purchase_order_id == order.id).all()
 
+        requested_by_id = {ri.id: ri.quantity for ri in request_items}
+        item_variances = []
+        for item in order_items:
+            if item.request_item_id not in requested_by_id:
+                item_variances.append({"request_item_id": None, "variance_pct": None, "unrequested": True , "item_name": item.item_name, "quantity": item.quantity})
+                continue
+            var = (( item.quantity- requested_by_id[item.request_item_id] ) / requested_by_id[item.request_item_id]) * 100
+            item_variances.append({"request_item_id": item.request_item_id, "variance_pct": var, "item_name": item.item_name, "quantity": item.quantity})
 
+        flagged = any(abs(v["variance_pct"]) > 10 for v in item_variances if v["variance_pct"] is not None)
+
+        result.append({
+            "order": order,
+            "flagged": flagged,
+            "item_variances": item_variances
+        })
+    return result
+
+@app.post("/deliveries")
+def delivered(body: DeliveryIn, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+    purchase_order = db.query(PurchaseOrderModel).filter(PurchaseOrderModel.id == body.purchase_order_id).first()
+    if not purchase_order:
+        raise HTTPException(status_code=404, detail="Purchase order not found")
+    if purchase_order.company_id != current_user.company_id:
+        raise HTTPException(status_code=403, detail="Not authorized")
+    new_delivery = DeliveryModel(company_id = current_user.company_id, purchase_order_id = body.purchase_order_id, gps_lat = body.gps_lat, gps_lng = body.gps_lng, confirmed_by = current_user.id  )
+    db.add(new_delivery)
+    db.commit()
+    db.refresh(new_delivery)
+
+    for item in body.items:
+        new_item = DeliveryItemModel(order_item_id = item.order_item_id, received_qty = item.received_qty, delivery_id = new_delivery.id)
+        db.add(new_item)
+    db.commit()
+    return new_delivery
