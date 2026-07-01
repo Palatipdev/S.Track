@@ -12,8 +12,8 @@ from app.models import PurchaseOrder as PurchaseOrderModel
 from app.models import OrderItem as OrderItemModel
 from app.models import Delivery as DeliveryModel
 from app.models import DeliveryItem as DeliveryItemModel
-from app.schemas import DeliveryItemIn
-from app.schemas import DeliveryIn
+from app.schemas import DeliveryItemIn, DeliveryIn, ProjectIn, SupplierIn
+from app.models import Project as ProjectModel, Supplier as SupplierModel
 
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -141,3 +141,34 @@ def delivered(body: DeliveryIn, db: Session = Depends(get_db), current_user: Use
         db.add(new_item)
     db.commit()
     return new_delivery
+
+@app.post("/projects")
+def create_project(body: ProjectIn, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+    project = ProjectModel(
+        company_id=current_user.company_id,
+        name=body.name,
+        budget=body.budget,
+        start_date=body.start_date,
+        end_date=body.end_date,
+    )
+    db.add(project)
+    db.commit()
+    db.refresh(project)
+    return project
+
+@app.get("/projects")
+def get_projects(db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+    return db.query(ProjectModel).filter(ProjectModel.company_id == current_user.company_id).all()
+
+@app.post("/suppliers")
+def create_supplier(body: SupplierIn, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+    supplier = SupplierModel(company_id=current_user.company_id, name=body.name)
+    db.add(supplier)
+    db.commit()
+    db.refresh(supplier)
+    return supplier
+
+@app.get("/suppliers")
+def get_suppliers(db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+    return db.query(SupplierModel).filter(SupplierModel.company_id == current_user.company_id).all()
+

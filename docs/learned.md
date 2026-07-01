@@ -92,17 +92,20 @@ Capture things you actually understood (not just what got built). Vibe-coded out
   - N/A
 
   ### 2026-30-06 — POST Endpoint for purchase order , Splitting current request by status categorically in , Endpoint for deliveries. Caught a BIG DESIGN FLAW
+  ## GET endpoints for purchase orders, wired it to frontend through nested react html.
 - What I learned (in my own words):
   - Revision for writing POST endpoint for purchasing a requested order
     - body must come before depends arguments
     - db need to add , commit, refresh before able to loop through that added object
   - You could wrap react component inside of a function in typescript then proceed to print them via filtering (Status category)
   - Recognising big design flaw during variance calculation that the previous codebase were going to compare item name in request against ordered. which can create loophole with nameing variations. Changed order_item in supabase, schemas, and pydantics to make order_item reference request_item id so that we have direct link to what is being ticked off in request order
+  - Learnt (kinda) and struggled (definitely) through writing purchase-order endpoint since we were wiring many schemas together.  the nested function for printing purchase order and per-item variances. adding conditional styles
 - Why it matters / where it applies:
   -  API endpoints and react + typescript tech. useful patterns.
   - Recognising design flaw come from iterating through the system and recognise them while writing the code. just using sonnet without understanding the code would've caught this big flaw later when stages are implemented
 - Open question I still have:
   - I am just still unsure about how to handle the other backend stuff like ids and things that arent passed from the frontend and can't be calculated
+  - Everything was slowly making sense , but now its back to square one. feeling lost. Gotta keep pushing through.
 
   ### 2026-01-07 — 
 - What I learned (in my own words):

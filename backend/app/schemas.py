@@ -30,6 +30,15 @@ class PurchaseOrderIn(BaseModel):
     expected_delivery: date
     items: list[OrderItemIn]
 
+class ProjectIn(BaseModel):
+    name: str
+    budget: Decimal
+    start_date: date
+    end_date: Optional[date] = None
+
+class SupplierIn(BaseModel):
+    name: str
+
 class DeliveryItemIn(BaseModel):
     order_item_id: int
     received_qty: Decimal
