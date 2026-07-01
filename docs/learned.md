@@ -107,13 +107,19 @@ Capture things you actually understood (not just what got built). Vibe-coded out
   - I am just still unsure about how to handle the other backend stuff like ids and things that arent passed from the frontend and can't be calculated
   - Everything was slowly making sense , but now its back to square one. feeling lost. Gotta keep pushing through.
 
-  ### 2026-01-07 — 
+  ### 2026-01-07 — GET endpoint for purchase-order with order id, Necessary for POST deliveries. Wired them to the frontend.
 - What I learned (in my own words):
-  - 
+  - "|" is used for typescript variable's type annotation while "||" is used during runtime for logical operations
+  - in endpoints, if we are passing id through url like /.../{id}/.. we could pass the id directly into the parameter
+  - use backtick for urls inside of typescript so that javascript variable can interpolate `${...}`
+  - tackled with wiring the endpoint in frontend was a pain. Learnt that during mapping, if out is onChange((e) => ....) which ever mapped index that is clicked return back the value = {...} we assigned into e. Which we then type converges into what we want to pass into the function
+  - TypeScipt - useState declaration
+    - Set<T> is used for checking existence
+    - Record<K,V> is used for dict search
 - Why it matters / where it applies:
-  - 
+  - these are syntaxes and typescript logics used for writing frontend work
 - Open question I still have:
-  - 
+  -
 
   ### 2026-02-07 — 
 - What I learned (in my own words):

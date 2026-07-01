@@ -6,7 +6,8 @@ Construction materials procurement visibility dashboard. Replaces Excel + WhatsA
 ```
 /
 ├── frontend/      Next.js 16 app (Vercel deploy)
-├── backend/       Python FastAPI service (coming next sessions)
+├── backend/       Python FastAPI + SQLAlchemy service
+├── sql/           Postgres schema + ERD
 ├── docs/          Project spec, context, rules, learning log
 ├── README.md
 ├── AGENTS.md      Next.js 16 agent rules
@@ -37,7 +38,7 @@ npm run dev     # Next.js dev server
 npm run build
 npm run lint
 ```
-FastAPI scaffolding is not in the repo yet — coming next sessions.
+Backend runs from `backend/` (venv): `uvicorn app.main:app --reload`.
 
 ---
 
@@ -63,22 +64,30 @@ FastAPI scaffolding is not in the repo yet — coming next sessions.
 - [x] JWT verification on FastAPI via Supabase client (`get_current_user`).
 - [x] `company_id` / `requested_by` filled from the verified token, confirmed with a 200.
 
-### Frontend — in progress
+### Requests & approval — done
 - [x] Login page with Supabase Auth (`frontend/app/login/page.tsx`).
-- [x] Dashboard page fetching `GET /material-requests` and rendering the list.
-- [x] CORS wired on FastAPI (`CORSMiddleware`).
-- [x] Root `app/page.tsx` redirects to `/login`.
+- [x] Dashboard fetching `GET /material-requests`, split into pending/approved/rejected.
+- [x] Add-request modal (project/urgency/reason + nested items) → `POST /material-requests`.
+- [x] `PATCH /material-requests/{id}` owner-only approve/reject, wired to buttons.
+- [x] `GET /material-requests/{id}/items` + expand-on-click item list.
+- [x] Logout button; CORS wired on FastAPI; root `app/page.tsx` redirects to `/login`.
 
-### Next session
-- [ ] Style the dashboard with Tailwind.
-- [ ] Add logout button.
-- [ ] Material request submission form on the frontend.
-- [ ] Create-project / create-user endpoints (replace hand-inserted test data).
+### Purchase orders & variance — done
+- [x] `POST /purchase-orders` (server-summed `total_cost`, rejects non-approved requests).
+- [x] `order_items.request_item_id` FK so variance ties to the exact requested line.
+- [x] `GET /purchase-orders` with per-item variance %, `flagged` when any item >10%.
+- [x] Frontend orders list with red highlight over the 10% threshold.
+- [x] `POST/GET /projects`, `POST/GET /suppliers` (company-scoped).
+
+### Delivery confirmation — done
+- [x] `POST /deliveries` (header + delivery_items).
+- [x] `GET /purchase-orders/{id}/items` to feed the delivery modal.
+- [x] Order-picker dropdown (fetch-on-select) + per-item `received_qty` inputs.
+- [x] `handleDelivery` builds the `items` array and POSTs to `/deliveries`, tested end-to-end.
 
 ### Backlog
-- [ ] Supabase Auth on the Next.js side (frontend login flow).
 - [ ] Photo upload pipeline (Supabase Storage → server-side sha256 → `delivery_photos`).
-- [ ] Owner approval queue UI.
-- [ ] Variance calc (requested vs ordered, >10% threshold).
-- [ ] Procurement dashboard.
+- [ ] Budget auto-deduct on purchase-order logging (spec Feature #4).
+- [ ] Style the dashboard with Tailwind.
+- [ ] Create-user endpoint (replace hand-inserted test users).
 - [ ] Add Row-Level Security (RLS) policy stubs scoped by `company_id`.

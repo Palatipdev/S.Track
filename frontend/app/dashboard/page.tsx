@@ -9,8 +9,16 @@ export default function dashboardPage() {
   const [requests, setRequests] = useState<any[]>([]);
   const [purchaseOrders, setPurchaseOrders] = useState<any[]>([]);
   const [addRequest, setAddRequest] = useState(false);
-  const [expandedIds, setExpandedIds] = useState<Set<number>>(new Set())
-  const [itemsMap, setItemsMap] = useState<Record<number, any[]>>({})
+  const [expandedIds, setExpandedIds] = useState<Set<number>>(new Set());
+  const [itemsMap, setItemsMap] = useState<Record<number, any[]>>({});
+
+  const [gpsLat, setGPSLat] = useState<number | null>(null);
+  const [gpsLng, setGPSLng] = useState<number | null>(null);
+  const [receivedQty, setReceivedQty] = useState<Record<number, number>>({});
+
+  const [expandedOrder, setExpandedOrder] = useState(false);
+  const [selectedOrderItems, setSelectedOrderItems] = useState<any[]>([]);
+  const [selectedOrderId, setSelectedOrderId] = useState<number | null>(null);
 
   const [projectId, setProjectId] = useState("");
   const [urgency, setUrgency] = useState("medium");
@@ -35,6 +43,21 @@ export default function dashboardPage() {
     return token;
   };
 
+  async function fetchOrderItems(order_id: number) {
+    const token = await getSupabaseToken();
+    if (!token) return;
+    const response = await fetch(
+      `http://localhost:8000/purchase-orders/${order_id}/items`,
+      {
+        headers: { Authorization: `Bearer ${token}` },
+        method: "GET",
+      },
+    );
+    const data = await response.json();
+    setSelectedOrderItems(data);
+    setSelectedOrderId(order_id);
+  }
+
   function addItem() {
     setItems([
       ...items,
@@ -48,27 +71,30 @@ export default function dashboardPage() {
     setItemQuantity("");
     setItemUnit("");
   }
-  function toggleExpand(id:number){
-    setExpandedIds(prev => {
-      const next = new Set(prev)
+  function toggleExpand(id: number) {
+    setExpandedIds((prev) => {
+      const next = new Set(prev);
       if (next.has(id)) {
-        next.delete(id)
-      } else{
-        next.add(id)
-        fetchItems(id)
+        next.delete(id);
+      } else {
+        next.add(id);
+        fetchItems(id);
       }
-      return next
-    })
+      return next;
+    });
   }
   async function fetchItems(requestId: number) {
-    const token = await getSupabaseToken()
-    if (!token) return
-    const response = await fetch(`http://localhost:8000/material-requests/${requestId}/items`, {
-      headers: {Authorization: `Bearer ${token}`},
-      method: "GET"
-    });
-    const data = await response.json()
-    setItemsMap(prev => ({...prev, [requestId]: data}))
+    const token = await getSupabaseToken();
+    if (!token) return;
+    const response = await fetch(
+      `http://localhost:8000/material-requests/${requestId}/items`,
+      {
+        headers: { Authorization: `Bearer ${token}` },
+        method: "GET",
+      },
+    );
+    const data = await response.json();
+    setItemsMap((prev) => ({ ...prev, [requestId]: data }));
   }
 
   async function fetchData() {
@@ -92,9 +118,41 @@ export default function dashboardPage() {
     setPurchaseOrders(data);
   }
 
+  async function handleDelivery() {
+    const token = await getSupabaseToken();
+    if (!token) return;
+
+    const items = selectedOrderItems.map((selected) => ({
+      order_item_id: selected.id,
+      received_qty: receivedQty[selected.id],
+    }));
+    const response = await fetch(`http://localhost:8000/deliveries`, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+      },
+      method: "POST",
+
+      body: JSON.stringify({
+        purchase_order_id: selectedOrderId,
+        gps_lat: gpsLat,
+        gps_lng: gpsLng,
+        items: items,
+      }),
+    });
+    if (response.ok) {
+      setExpandedOrder(false);
+      await fetchPurchaseOrders();
+    }
+  }
+
   useEffect(() => {
     fetchData();
     fetchPurchaseOrders();
+    navigator.geolocation.getCurrentPosition((position) => {
+      setGPSLat(position.coords.latitude);
+      setGPSLng(position.coords.longitude);
+    });
   }, []);
 
   async function handleAddRequest() {
@@ -122,14 +180,17 @@ export default function dashboardPage() {
   async function approve(requestId: number, status: string) {
     const token = await getSupabaseToken();
     if (!token) return;
-    const response = await fetch(`http://localhost:8000/material-requests/${requestId}`, {
-      method: "PATCH",
-      headers: {
-        Authorization: `Bearer ${token}`,
-        "Content-Type": "application/json",
+    const response = await fetch(
+      `http://localhost:8000/material-requests/${requestId}`,
+      {
+        method: "PATCH",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ status }),
       },
-      body: JSON.stringify({ status }),
-    });
+    );
     if (response.ok) {
       await fetchData();
     }
@@ -144,46 +205,77 @@ export default function dashboardPage() {
     }
   }
 
-  const pending  = requests.filter(r => r.status === 'pending')
-  const approved = requests.filter(r => r.status === 'approved')
-  const rejected = requests.filter(r => r.status === 'rejected')
-
+  const pending = requests.filter((r) => r.status === "pending");
+  const approved = requests.filter((r) => r.status === "approved");
+  const rejected = requests.filter((r) => r.status === "rejected");
 
   function renderRequests(list: any[]) {
     return (
       <ul>
         {list.map((req) => (
-          <li key={req.id} onClick={() => toggleExpand(req.id)} style={{cursor: 'pointer'}}>
+          <li
+            key={req.id}
+            onClick={() => toggleExpand(req.id)}
+            style={{ cursor: "pointer" }}
+          >
             {req.project_id} — {req.status} — {req.urgency}
-            <button type="button" onClick={(e) => { e.stopPropagation(); approve(req.id, 'approved') }}>Approve</button>
-            <button type="button" onClick={(e) => { e.stopPropagation(); approve(req.id, 'rejected') }}>Reject</button>
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                approve(req.id, "approved");
+              }}
+            >
+              Approve
+            </button>
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                approve(req.id, "rejected");
+              }}
+            >
+              Reject
+            </button>
             {expandedIds.has(req.id) && (
               <ul>
                 {(itemsMap[req.id] || []).map((item, idx) => (
-                  <li key={idx}>{item.item_name} — {item.quantity} {item.unit}</li>
+                  <li key={idx}>
+                    {item.item_name} — {item.quantity} {item.unit}
+                  </li>
                 ))}
               </ul>
             )}
           </li>
         ))}
       </ul>
-    )
+    );
   }
-  function renderOrders(list: any[]){
-    return(
+  function renderOrders(list: any[]) {
+    return (
       <ul>
         {list.map((purchase_order) => (
           <li key={purchase_order.order.id}>
-            {purchase_order.order.id} — {purchase_order.order.supplier_id} — {purchase_order.order.total_cost} — {purchase_order.order.status}
-              <ul>
-                {purchase_order.item_variances.map((val: any, idx: number) => (
-                  <li key = {idx} style = {{color: Math.abs(val.variance_pct) > 10 ? 'red' : 'white'}}> {val.request_item_id} — {val.item_name} — {val.quantity} — {val.variance_pct?.toFixed(1)}% </li>
-                ))}
-              </ul>
+            {purchase_order.order.id} — {purchase_order.order.supplier_id} —{" "}
+            {purchase_order.order.total_cost} — {purchase_order.order.status}
+            <ul>
+              {purchase_order.item_variances.map((val: any, idx: number) => (
+                <li
+                  key={idx}
+                  style={{
+                    color: Math.abs(val.variance_pct) > 10 ? "red" : "white",
+                  }}
+                >
+                  {" "}
+                  {val.request_item_id} — {val.item_name} — {val.quantity} —{" "}
+                  {val.variance_pct?.toFixed(1)}%{" "}
+                </li>
+              ))}
+            </ul>
           </li>
         ))}
       </ul>
-    )
+    );
   }
 
   return (
@@ -199,7 +291,7 @@ export default function dashboardPage() {
 
       <div>
         <h2>Orders:</h2>
-        {renderOrders(purchaseOrders)}
+        <div>{renderOrders(purchaseOrders)}</div>
       </div>
 
       <div className="signout">
@@ -267,6 +359,48 @@ export default function dashboardPage() {
             <button type="submit">Submit Request</button>
           </form>
           <button onClick={() => setAddRequest(false)}>Close</button>
+        </div>
+      )}
+
+      <div className="add-delivery-item">
+        <button onClick={() => setExpandedOrder(true)}>Confirm</button>
+      </div>
+      {expandedOrder && (
+        // Modal content
+        <div>
+          <form
+            className="add-delivery-form"
+            onSubmit={(e) => {
+              e.preventDefault();
+              handleDelivery();
+            }}
+          >
+            <select onChange={(e) => fetchOrderItems(Number(e.target.value))}>
+              {purchaseOrders.map((o) => (
+                <option key={o.order.id} value={o.order.id}>
+                  Order #{o.order.id}
+                </option>
+              ))}
+            </select>
+            <ul>
+              {selectedOrderItems.map((selected) => (
+                <li key={selected.id}>
+                  {selected.id} — {selected.item_name} —{" "}
+                  <input
+                    type="number"
+                    value={receivedQty[selected.id] || ""}
+                    placeholder="Quantity"
+                    onChange={(e) =>
+                      setReceivedQty((prev) => ({
+                        ...prev,
+                        [selected.id]: Number(e.target.value),
+                      }))
+                    }
+                  ></input>
+                </li>
+              ))}
+            </ul>
+          </form>
         </div>
       )}
     </main>

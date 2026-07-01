@@ -7,7 +7,7 @@
 ## Project Snapshot
 
 - **Repo**: `S.Track` (GitHub: `Palatipdev/S.Track`)
-- **Stack**: Next.js `16.2.3` (App Router), React `19.2.4`, Tailwind CSS v4, TypeScript 5; Python FastAPI + SQLAlchemy backend (not yet scaffolded); Supabase (Postgres + Storage + Auth).
+- **Stack**: Next.js `16.2.3` (App Router), React `19.2.4`, Tailwind CSS v4, TypeScript 5; Python FastAPI + SQLAlchemy backend (scaffolded, ~12 endpoints live); Supabase (Postgres + Storage + Auth).
 - **Important**: This Next.js version has breaking changes vs. older versions. Always consult `frontend/node_modules/next/dist/docs/` before writing Next-specific code (per `AGENTS.md`).
 - **Working directory**: `C:\Users\riaza\Documents\s-track`
 - **Platform**: Windows 11, PowerShell
@@ -15,19 +15,25 @@
 ## Repo Layout
 ```
 /
-├── frontend/   Next.js 16 app (was at repo root before reorg)
-├── backend/    FastAPI — placeholder, to be scaffolded
+├── frontend/   Next.js 16 app (login + dashboard)
+├── backend/    FastAPI + SQLAlchemy (models, schemas, auth, ~12 endpoints)
+├── sql/        schema.sql (Postgres DDL) + MySQL Workbench ERD
 ├── docs/       This file + Project-Spec.md, claude-rule.md, learned.md
 ├── README.md, AGENTS.md, CLAUDE.md, LICENSE
 ```
 
 ## Current State
 
-- Boilerplate `create-next-app` scaffold only, now under `frontend/`. `frontend/app/page.tsx` is the default landing page.
-- No backend project initialized yet (FastAPI not scaffolded; `backend/` directory does not exist yet, create on first use).
-- No app features, routes, components, API handlers, or tests yet.
-- DB schema designed in `sql/database-table.mwb` (MySQL Workbench ERD). Not yet translated to Postgres or applied. Supabase project not yet created.
-- Stray `s-track` empty file at root has been removed.
+- **DB**: Postgres schema (`sql/schema.sql`, 15 tables, 5 enums) live on Supabase. Data API off; FastAPI is the only DB entry point.
+- **Backend** (`backend/app/`): FastAPI scaffolded with SQLAlchemy models (all 15 tables), Pydantic schemas, and Supabase-JWT auth (`get_current_user`). Endpoints live:
+  - `GET /health`
+  - `POST /material-requests`, `GET /material-requests`, `PATCH /material-requests/{id}` (owner-only approve/reject), `GET /material-requests/{id}/items`
+  - `POST /purchase-orders`, `GET /purchase-orders` (with per-item variance), `GET /purchase-orders/{id}/items`
+  - `POST /deliveries`
+  - `POST /projects`, `GET /projects`, `POST /suppliers`, `GET /suppliers`
+- **Frontend** (`frontend/app/`): login page (Supabase Auth), dashboard listing requests by status (pending/approved/rejected) with expand-to-items, approve/reject buttons, add-request modal, a purchase-orders list with per-item variance highlighting, and a delivery-confirmation modal (order-picker dropdown, fetch-on-select, per-item received-qty inputs) that POSTs to `/deliveries`.
+- **Auth**: test company (id 1), test owner user (id 1), test project — inserted by hand / via endpoints. No create-user endpoint yet.
+- All styling is unstyled HTML — no Tailwind applied yet.
 
 ## Conventions & Constraints
 
@@ -38,10 +44,11 @@
 
 ## Open Questions / TODO Backlog
 
-- [ ] Lock schema in `docs/Project-Spec.md`.
-- [ ] Create Supabase project + capture connection details.
-- [ ] Scaffold `backend/` with FastAPI + SQLAlchemy + Alembic.
-- [ ] Write first migration: `companies`, `users`, `projects`, `project_members`.
+- [ ] Delivery photo upload pipeline (Supabase Storage → server-side sha256 → `delivery_photos`).
+- [ ] Style the dashboard with Tailwind (currently unstyled HTML).
+- [ ] Create-user endpoint (test users still inserted by hand).
+- [ ] RLS policy stubs scoped by `company_id`.
+- [ ] Budget auto-deduct on purchase-order logging (spec Feature #4).
 
 ---
 
@@ -143,6 +150,40 @@
   - `next/router` is the old Pages Router import. App Router uses `next/navigation`.
 - **Unfinished**: Dashboard is a plain list, no styling. Items not shown (separate table). No logout button.
 - **Next**: Style the dashboard with Tailwind. Add logout. Start the material request submission form on the frontend.
+
+### Session 2026-06-29: Frontend request submission + approval endpoint
+- **Goal**: Let the frontend submit material requests, and give the owner an approve/reject action.
+- **Changes**:
+  - `frontend/app/dashboard/page.tsx` — add-request modal: project_id / urgency / reason inputs plus a nested item builder (`addItem`), POSTs the whole payload to `POST /material-requests`.
+  - `backend/app/main.py` — `PATCH /material-requests/{request_id}` to set status; owner-only, scoped by `company_id`. Added `ApproveRequest` Pydantic schema.
+  - `backend/app/main.py` — `GET /material-requests/{request_id}/items`; frontend expand-on-click shows a request's line items (`toggleExpand` + `itemsMap`).
+  - Logout button added to the dashboard.
+- **Decisions**:
+  - First PATCH endpoint — assigned to the user as a solo learning task (per claude-rule §0).
+  - Items posted nested in one request body, same pattern as the POST insert.
+- **Next**: purchase-order logging (buyer logs PO after approval).
+
+### Session 2026-06-30: Purchase orders + variance + status split (caught a design flaw)
+- **Goal**: Buyer logs a purchase order against an approved request; owner sees requested-vs-ordered variance.
+- **Changes**:
+  - `backend/app/main.py` — `POST /purchase-orders` (header + order_items, `total_cost` summed server-side, rejects non-`approved` requests), `GET /purchase-orders` (per-item variance %, `flagged` when any item >10%), `POST /deliveries` (header + delivery_items). Added `PurchaseOrderIn` / `OrderItemIn` / `DeliveryIn` schemas.
+  - `frontend/app/dashboard/page.tsx` — requests split into pending/approved/rejected sections; purchase-orders list renders nested per-item variance with red highlight over 10%.
+- **Decisions**:
+  - **Design flaw caught**: variance was going to match request vs order by *item name*, which breaks on naming variations. Changed `order_items` to carry `request_item_id` (FK) so variance ties to the exact requested line. Updated schema, model, and Pydantic to match.
+  - `total_cost` computed on the server from `quantity * unit_cost`, never trusted from the client.
+- **Next**: project/supplier create endpoints; wire delivery confirmation to the frontend.
+
+### Session 2026-07-01: Project/supplier CRUD + delivery confirmation
+- **Goal**: Add project/supplier endpoints; ship the delivery-confirmation flow end-to-end.
+- **Changes**:
+  - `backend/app/main.py` — `POST/GET /projects`, `POST/GET /suppliers`, all `company_id`-scoped. Added `ProjectIn` / `SupplierIn` schemas.
+  - `backend/app/main.py` — `GET /purchase-orders/{order_id}/items` to feed the delivery modal.
+  - `frontend/app/dashboard/page.tsx` — delivery modal: order-picker `<select>` (`onChange` → `fetchOrderItems`), per-item `received_qty` inputs keyed by `order_item.id` (`Record<number, number>` state), `handleDelivery` builds the `items` array and POSTs to `/deliveries` with `purchase_order_id`, `gps_lat`, `gps_lng`, `items`. GPS captured on mount via `navigator.geolocation`.
+- **Decisions**:
+  - Delivery form's `onSubmit` explicitly calls `e.preventDefault()` before `handleDelivery()` — guards against the browser's default full-page-reload submit behavior.
+  - `received_qty` state keyed by `order_item.id` (dict/map shape), not a single value — mirrors `itemsMap`'s existing per-id lookup pattern, needed because the number of order items is dynamic per order.
+- **Debugging notes**: first draft of `handleDelivery` skipped `Content-Type: application/json` and never added the built `items` array into the POST body — both silent no-ops until traced through manually.
+- **Next**: delivery photo upload pipeline (Supabase Storage → server-side sha256 → `delivery_photos`); budget auto-deduct on purchase-order logging.
 
 <!--
 Template for the next session:

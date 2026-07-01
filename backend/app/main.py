@@ -124,6 +124,14 @@ def get_purchase_orders(db: Session = Depends(get_db), current_user: User = Depe
         })
     return result
 
+@app.get("/purchase-orders/{order_id}/items")
+def get_order_items(order_id: int ,db:Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+    if (db.query(PurchaseOrderModel).filter(PurchaseOrderModel.id == order_id ,PurchaseOrderModel.company_id == current_user.company_id).first() == None):
+        raise HTTPException(status_code = 403 , detail="Not found")
+    order_request = db.query(OrderItemModel).filter(OrderItemModel.purchase_order_id == order_id).all()
+    return order_request
+
+
 @app.post("/deliveries")
 def delivered(body: DeliveryIn, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
     purchase_order = db.query(PurchaseOrderModel).filter(PurchaseOrderModel.id == body.purchase_order_id).first()
@@ -171,4 +179,5 @@ def create_supplier(body: SupplierIn, db: Session = Depends(get_db), current_use
 @app.get("/suppliers")
 def get_suppliers(db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
     return db.query(SupplierModel).filter(SupplierModel.company_id == current_user.company_id).all()
+
 
