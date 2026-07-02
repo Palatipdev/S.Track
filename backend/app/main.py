@@ -1,9 +1,11 @@
 from fastapi import FastAPI, Depends, HTTPException, UploadFile, File
 from sqlalchemy.orm import Session
+import hashlib
 from app.schemas import MaterialRequest
 from app.database import get_db
 from app.models import MaterialRequest as MaterialRequestModel
 from app.models import RequestItem as RequestItemModel
+from app.auth import supabase, supabase_admin
 from app.models import User
 from app.schemas import ApproveRequest
 from app.auth import get_current_user
@@ -149,6 +151,7 @@ def delivered(body: DeliveryIn, db: Session = Depends(get_db), current_user: Use
         new_item = DeliveryItemModel(order_item_id = item.order_item_id, received_qty = item.received_qty, delivery_id = new_delivery.id)
         db.add(new_item)
     db.commit()
+    db.refresh(new_delivery)
     return new_delivery
 
 @app.post("/projects")
@@ -191,7 +194,7 @@ async def upload_delivery_photo(delivery_id: int , file: UploadFile = File(), cu
         raise HTTPException(status_code = 403, detail="Invalid User")
     file_byte = await file.read()
     myString = hashlib.sha256(file_byte).hexdigest()
-    supabase.storage.from_("delivery-photos").upload(f"{delivery_id}/{myString}" , file_byte)
+    supabase_admin.storage.from_("delivery-photos").upload(f"{delivery_id}/{myString}" , file_byte)
 
     request = DeliveryPhotoModel(delivery_id = delivery_id, file_key = f"{delivery_id}/{myString}", sha256_hash = myString)
     db.add(request)

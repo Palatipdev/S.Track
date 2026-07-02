@@ -484,7 +484,7 @@ export default function dashboardPage() {
               <select
                 value={urgency}
                 onChange={(e) => setUrgency(e.target.value)}
-                className="w-full rounded border border-white/10 bg-white/5 p-2 text-sm"
+                className="w-full rounded border border-white/10 bg-neutral-800 p-2 text-sm text-white"
               >
                 <option value="low">Low</option>
                 <option value="medium">Medium</option>
@@ -567,7 +567,7 @@ export default function dashboardPage() {
             >
               <select
                 onChange={(e) => fetchRequestItems(Number(e.target.value))}
-                className="w-full rounded border border-white/10 bg-white/5 p-2 text-sm"
+                className="w-full rounded border border-white/10 bg-neutral-800 p-2 text-sm text-white"
               >
                 <option value="">-- select approved request --</option>
                 {approved.map((req) => (
@@ -580,7 +580,7 @@ export default function dashboardPage() {
               <select
                 value={supplierId}
                 onChange={(e) => setSupplierId(e.target.value)}
-                className="w-full rounded border border-white/10 bg-white/5 p-2 text-sm"
+                className="w-full rounded border border-white/10 bg-neutral-800 p-2 text-sm text-white"
               >
                 <option value="">-- select supplier --</option>
                 {suppliers.map((s) => (
@@ -651,7 +651,7 @@ export default function dashboardPage() {
             >
               <select
                 onChange={(e) => fetchOrderItems(Number(e.target.value))}
-                className="w-full rounded border border-white/10 bg-white/5 p-2 text-sm"
+                className="w-full rounded border border-white/10 bg-neutral-800 p-2 text-sm text-white"
               >
                 <option value="">-- select order --</option>
                 {purchaseOrders.map((o) => (
