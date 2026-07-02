@@ -107,7 +107,7 @@ Capture things you actually understood (not just what got built). Vibe-coded out
   - I am just still unsure about how to handle the other backend stuff like ids and things that arent passed from the frontend and can't be calculated
   - Everything was slowly making sense , but now its back to square one. feeling lost. Gotta keep pushing through.
 
-  ### 2026-01-07 — GET endpoint for purchase-order with order id, Necessary for POST deliveries. Wired them to the frontend.
+  ### 2026-01-07 — GET endpoint for purchase-order with order id, Necessary for POST deliveries. Wired them to the frontend. New UI, per-items record states and order dropdown picker for fetching function
 - What I learned (in my own words):
   - "|" is used for typescript variable's type annotation while "||" is used during runtime for logical operations
   - in endpoints, if we are passing id through url like /.../{id}/.. we could pass the id directly into the parameter
@@ -116,18 +116,22 @@ Capture things you actually understood (not just what got built). Vibe-coded out
   - TypeScipt - useState declaration
     - Set<T> is used for checking existence
     - Record<K,V> is used for dict search
+  - Map uses Variable.map((eachItem) => ({...}))   , ({...}) is necessary as it encapsulate and return an object otherwise it will read as function body
+  - "Content-Type" : "application/json" tells FASTAPI (endpoint) that we are sending over json object to the endpoint (POST)
 - Why it matters / where it applies:
   - these are syntaxes and typescript logics used for writing frontend work
 - Open question I still have:
   -
 
-  ### 2026-02-07 — 
+  ### 2026-02-07 — POST delivery photos
 - What I learned (in my own words):
-  - 
+  - Dealt with reading file in FASTAPI and creating Supabase bucket, which is inserted in the endpoint using f"...." which was new syntaxes
+  - File was send in as parameter then await File.read() is used to give byte then sha256 something something turnt it into hash strings
+  - File was used as input type in the frontend and the async function utilises FormData() which is new.
 - Why it matters / where it applies:
-  - 
+  - hashing is done on the server side (fastapi) to prevent fraud of uploading the same byte i.e. 
 - Open question I still have:
-  - 
+  - Formdata() purposes and syntax compared to normal type of input are still confusing to me.
 
   ### 2026-03-07 — 
 - What I learned (in my own words):

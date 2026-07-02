@@ -31,6 +31,12 @@ export default function dashboardPage() {
   const [itemQuantity, setItemQuantity] = useState("");
   const [itemUnit, setItemUnit] = useState("");
 
+  // Delivery photo
+  const [currentFile, setCurrentFile] = useState<File | null>(null);
+  const [confirmDeliveryId, setConfirmDeliveryId] = useState<number | null>(
+    null,
+  );
+
   const getSupabaseToken = async () => {
     // fetching the current session
     const { data, error } = await supabase.auth.getSession();
@@ -140,9 +146,12 @@ export default function dashboardPage() {
         items: items,
       }),
     });
+
     if (response.ok) {
       setExpandedOrder(false);
       await fetchPurchaseOrders();
+      const data = await response.json();
+      setConfirmDeliveryId(data.id);
     }
   }
 
@@ -203,6 +212,21 @@ export default function dashboardPage() {
     } else {
       router.push("/login");
     }
+  }
+
+  async function uploadPicture(delivery_id: number) {
+    const token = await getSupabaseToken();
+    if (!token || currentFile == null) return;
+    const fd = new FormData();
+    fd.append("file", currentFile);
+    const response = await fetch(
+      `http://localhost:8000/deliveries/${delivery_id}/photos`,
+      {
+        method: "POST",
+        headers: { Authorization: `Bearer ${token}` },
+        body: fd,
+      },
+    );
   }
 
   const pending = requests.filter((r) => r.status === "pending");
@@ -401,6 +425,18 @@ export default function dashboardPage() {
               ))}
             </ul>
           </form>
+        </div>
+      )}
+
+      {confirmDeliveryId && (
+        <div className="upload-delivery">
+          <input
+            type="file"
+            accept="image/*"
+            capture="environment"
+            onChange={(e) => setCurrentFile(e.target.files?.[0] ?? null)}
+          ></input>
+          <button onClick={() => uploadPicture(confirmDeliveryId)}>Confirm Photos</button>
         </div>
       )}
     </main>

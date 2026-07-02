@@ -1,4 +1,4 @@
-from fastapi import FastAPI, Depends, HTTPException
+from fastapi import FastAPI, Depends, HTTPException, UploadFile
 from sqlalchemy.orm import Session
 from app.schemas import MaterialRequest
 from app.database import get_db
@@ -14,6 +14,7 @@ from app.models import Delivery as DeliveryModel
 from app.models import DeliveryItem as DeliveryItemModel
 from app.schemas import DeliveryItemIn, DeliveryIn, ProjectIn, SupplierIn
 from app.models import Project as ProjectModel, Supplier as SupplierModel
+from app.models import DeliveryPhoto as DeliveryPhotoModel
 
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -181,3 +182,18 @@ def get_suppliers(db: Session = Depends(get_db), current_user: User = Depends(ge
     return db.query(SupplierModel).filter(SupplierModel.company_id == current_user.company_id).all()
 
 
+@app.post("/deliveries/{delivery_id}/photos")
+async def upload_delivery_photo(delivery_id: int , file: UploadFile = File(), current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    check = db.query(DeliveryModel).filter(DeliveryModel.id == delivery_id).first()
+    if not check:
+        raise HTTPException(status_code = 404, detail="Delivery not found")
+    if check.company_id != current_user.company_id:
+        raise HTTPException(status_code = 403, detail="Invalid User")
+    file_byte = await file.read()
+    myString = hashlib.sha256(file_byte).hexdigest()
+    supabase.storage.from_("delivery-photos").upload(f"{delivery_id}/{myString}" , file_byte)
+
+    request = DeliveryPhotoModel(delivery_id = delivery_id, file_key = f"{delivery_id}/{myString}", sha256_hash = myString)
+    db.add(request)
+    db.commit()
+    return request
