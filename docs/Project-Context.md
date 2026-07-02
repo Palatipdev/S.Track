@@ -29,11 +29,11 @@
   - `GET /health`
   - `POST /material-requests`, `GET /material-requests`, `PATCH /material-requests/{id}` (owner-only approve/reject), `GET /material-requests/{id}/items`
   - `POST /purchase-orders`, `GET /purchase-orders` (with per-item variance), `GET /purchase-orders/{id}/items`
-  - `POST /deliveries`
+  - `POST /deliveries`, `POST /deliveries/{id}/photos` (multipart upload, server-side sha256, Supabase Storage bucket `delivery-photos`)
   - `POST /projects`, `GET /projects`, `POST /suppliers`, `GET /suppliers`
-- **Frontend** (`frontend/app/`): login page (Supabase Auth), dashboard listing requests by status (pending/approved/rejected) with expand-to-items, approve/reject buttons, add-request modal, a purchase-orders list with per-item variance highlighting, and a delivery-confirmation modal (order-picker dropdown, fetch-on-select, per-item received-qty inputs) that POSTs to `/deliveries`.
+- **Frontend** (`frontend/app/`): login page (Supabase Auth), Tailwind-styled dashboard (header w/ sign-out, action toolbar, sectioned cards, centered modal overlays) listing requests by status (pending/approved/rejected) with expand-to-items, approve/reject buttons, add-request modal, an add-purchase-order modal (approved-request picker → items load → supplier/date/unit-cost → POST), a purchase-orders list with per-item variance highlighting, a delivery-confirmation modal (order-picker dropdown, fetch-on-select, per-item received-qty inputs), and a delivery-photo upload block (file input, camera/gallery capture, `FormData` POST) gated on a confirmed delivery id.
 - **Auth**: test company (id 1), test owner user (id 1), test project — inserted by hand / via endpoints. No create-user endpoint yet.
-- All styling is unstyled HTML — no Tailwind applied yet.
+- Dashboard styled with Tailwind (dark theme, cards, modal overlays). Login page still unstyled.
 
 ## Conventions & Constraints
 
@@ -44,11 +44,11 @@
 
 ## Open Questions / TODO Backlog
 
-- [ ] Delivery photo upload pipeline (Supabase Storage → server-side sha256 → `delivery_photos`).
-- [ ] Style the dashboard with Tailwind (currently unstyled HTML).
+- [ ] Procurement dashboard budget overview (spent vs budgeted per project).
 - [ ] Create-user endpoint (test users still inserted by hand).
 - [ ] RLS policy stubs scoped by `company_id`.
 - [ ] Budget auto-deduct on purchase-order logging (spec Feature #4).
+- [ ] Style the login page with Tailwind (dashboard done).
 
 ---
 
@@ -184,6 +184,20 @@
   - `received_qty` state keyed by `order_item.id` (dict/map shape), not a single value — mirrors `itemsMap`'s existing per-id lookup pattern, needed because the number of order items is dynamic per order.
 - **Debugging notes**: first draft of `handleDelivery` skipped `Content-Type: application/json` and never added the built `items` array into the POST body — both silent no-ops until traced through manually.
 - **Next**: delivery photo upload pipeline (Supabase Storage → server-side sha256 → `delivery_photos`); budget auto-deduct on purchase-order logging.
+
+### Session 2026-07-02: Delivery photos, Add Purchase Order UI, Tailwind styling
+- **Goal**: Ship delivery-photo upload end-to-end; close the "no Add Purchase Order UI" gap; style the dashboard.
+- **Changes**:
+  - `backend/app/main.py` — `POST /deliveries/{delivery_id}/photos`: takes `file: UploadFile`, reads bytes, hashes with `hashlib.sha256`, uploads to the Supabase Storage bucket `delivery-photos` via `supabase.storage.from_(...).upload(...)`, inserts a `DeliveryPhoto` row (`delivery_id`, `file_key`, `sha256_hash`). Guarded by delivery ownership (`company_id` match). Required `python-multipart` install for FastAPI's multipart parsing.
+  - `frontend/app/dashboard/page.tsx` — file input (`accept="image/*" capture="environment"`) + `uploadPicture`, POSTs a `FormData` body (no `Content-Type` header, no `JSON.stringify` — browser sets the multipart boundary). Gated behind `confirmDeliveryId`, captured from `handleDelivery`'s response after a successful delivery POST.
+  - `frontend/app/dashboard/page.tsx` — **Add Purchase Order modal** (new, Claude-written per claude-rule §0 — repeat of the add-request modal pattern): picks an approved request → `fetchRequestItems` loads its line items → supplier dropdown + expected-delivery date + per-item unit-cost inputs → `handleAddOrder` POSTs to `/purchase-orders`. Added `fetchSuppliers`.
+  - Fixed a real bug: the delivery order-picker `<select>` had only one `<option>` in test data, so the browser's default-selected state meant `onChange` never fired on first pick. Fixed by adding a placeholder `<option value="">-- select --</option>` in both the delivery and purchase-order pickers.
+  - Full Tailwind pass on the dashboard: sticky header with sign-out pinned top-right (was previously mid-page), an action-button toolbar, sectioned/labeled cards for each status group and orders, and all three modals converted from inline blocks to centered dark-overlay cards.
+- **Decisions**:
+  - Hashing happens server-side, not client-side — a client-supplied hash could be faked to fabricate proof of an upload that never happened; server-side hashing ties the fingerprint to bytes the server actually received. Sha256 dedup only catches identical re-uploads, it does not verify photo *content* — content-level fraud detection is out of scope for MVP per the spec's Variance Decision section.
+  - Add Purchase Order was assigned to Claude to write directly (not hint-and-wait) since it's a repeat of an already-learned pattern (modal + nested item builder + POST), per claude-rule §0's speed-vs-learning split.
+- **Debugging notes**: `python-multipart` wasn't installed, causing a `RuntimeError` on startup once the upload endpoint was added — installed via pip. `.env` DB password was accidentally echoed to a terminal transcript during setup; flagged to the user to rotate the credential.
+- **Next**: procurement dashboard budget overview (spent vs budgeted per project); budget auto-deduct on purchase-order logging; create-user endpoint; RLS policy stubs; style the login page.
 
 <!--
 Template for the next session:

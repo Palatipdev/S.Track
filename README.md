@@ -85,9 +85,16 @@ Backend runs from `backend/` (venv): `uvicorn app.main:app --reload`.
 - [x] Order-picker dropdown (fetch-on-select) + per-item `received_qty` inputs.
 - [x] `handleDelivery` builds the `items` array and POSTs to `/deliveries`, tested end-to-end.
 
+### Delivery photos & purchase order UI — done
+- [x] `POST /deliveries/{id}/photos` — multipart upload, server-side sha256, Supabase Storage bucket `delivery-photos`.
+- [x] Frontend file input (camera/gallery capture) + `FormData` upload, gated on a confirmed delivery id.
+- [x] Add Purchase Order modal (approved-request picker → items → supplier/date/unit-cost → `POST /purchase-orders`).
+- [x] Fixed single-option dropdown bug (missing placeholder `<option>` meant `onChange` never fired).
+- [x] Dashboard styled with Tailwind — header, toolbar, sectioned cards, modal overlays.
+
 ### Backlog
-- [ ] Photo upload pipeline (Supabase Storage → server-side sha256 → `delivery_photos`).
+- [ ] Procurement dashboard budget overview (spent vs budgeted per project).
 - [ ] Budget auto-deduct on purchase-order logging (spec Feature #4).
-- [ ] Style the dashboard with Tailwind.
+- [ ] Style the login page with Tailwind.
 - [ ] Create-user endpoint (replace hand-inserted test users).
 - [ ] Add Row-Level Security (RLS) policy stubs scoped by `company_id`.
