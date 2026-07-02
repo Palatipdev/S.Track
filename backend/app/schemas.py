@@ -48,3 +48,5 @@ class DeliveryIn(BaseModel):
     gps_lat: Optional[Decimal] = None
     gps_lng: Optional[Decimal] = None
     items: list[DeliveryItemIn]
+
+    
