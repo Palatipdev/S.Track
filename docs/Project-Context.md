@@ -44,11 +44,16 @@
 
 ## Open Questions / TODO Backlog
 
-- [ ] Procurement dashboard budget overview (spent vs budgeted per project).
+**PIVOT (2026-07-03): real requirements from the family company's manager. Read `Project-Spec-v2.md` first.** v1 request→approval→PO flow is demoted; new core is PO ingest → goods receipt w/ condition checklist → multi-location stock → withdrawal (เบิก) tracking.
+
+- [ ] Get the manager's ER diagram; diff against `Project-Spec-v2.md` entities; record decisions in its Decision Log.
+- [ ] Ask the manager the 19 questions listed at the bottom of `Project-Spec-v2.md` (start with #1, #8, #19).
+- [ ] Phase A build: locations + items → PO ingest → receipts + checklist → stock movements/levels → withdrawals → stock dashboard.
 - [ ] Create-user endpoint (test users still inserted by hand).
 - [ ] RLS policy stubs scoped by `company_id`.
-- [ ] Budget auto-deduct on purchase-order logging (spec Feature #4).
 - [ ] Style the login page with Tailwind (dashboard done).
+- [ ] Delivery-photo upload feedback: add `uploadStatus` state ("idle" | "uploading" | "done"), show a loading state during the POST and a checkmark on success instead of the button staying as "Confirm Photos".
+- Retired by pivot: budget auto-deduct, requested-vs-ordered budget overview (budget lives in the ERP).
 
 ---
 
@@ -198,6 +203,18 @@
   - Add Purchase Order was assigned to Claude to write directly (not hint-and-wait) since it's a repeat of an already-learned pattern (modal + nested item builder + POST), per claude-rule §0's speed-vs-learning split.
 - **Debugging notes**: `python-multipart` wasn't installed, causing a `RuntimeError` on startup once the upload endpoint was added — installed via pip. `.env` DB password was accidentally echoed to a terminal transcript during setup; flagged to the user to rotate the credential.
 - **Next**: procurement dashboard budget overview (spent vs budgeted per project); budget auto-deduct on purchase-order logging; create-user endpoint; RLS policy stubs; style the login page.
+
+### Session 2026-07-03: Pivot to PO fulfillment + storage (v2)
+- **Goal**: Capture the real requirements from the manager's call and reframe the project around them.
+- **Changes**:
+  - `docs/Project-Spec-v2.md` created: full v2 spec. PO ingested from the company's accounting ERP (not authored here), goods receipt with per-line condition checklist (partial deliveries, damaged-package cases, return-to-supplier), hierarchical storage locations (head office / factory / หน่วยงาน), append-only `stock_movements` + maintained `stock_levels`, withdrawals (เบิก) against projects, equipment lifecycle deferred to Phase C. Includes migration steps, decision log, and 19 questions for the manager.
+  - `docs/Project-Spec.md` marked superseded (kept as v1 record).
+  - Backlog rewritten around the pivot; budget features retired (budget lives in the ERP).
+- **Decisions**:
+  - Stock is modeled as append-only movements + a maintained levels table, extending the v1 audit-first design.
+  - v1 tables stay in place (soft-deprecated), no destructive migration. Delivery-photo pipeline is reused as the receipt evidence mechanism.
+  - Performance concern answered in the spec: their volume is decades away from Postgres limits; the real risk is model/workflow mismatch, mitigated by the ERD diff and pilot.
+- **Next**: diff the manager's ER diagram against the spec, ask questions #1/#8/#19 first, then start Phase A (locations + items CRUD).
 
 <!--
 Template for the next session:

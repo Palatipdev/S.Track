@@ -1,5 +1,7 @@
 # S.Track — Procurement Visibility Dashboard
 
+> **Superseded (2026-07-03):** real customer requirements arrived. See `Project-Spec-v2.md` for the current direction (PO fulfillment + storage). This file stays as the v1 record.
+
 Last updated: 2026-05-06
 
 ## One-Sentence Pitch

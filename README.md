@@ -25,7 +25,8 @@ Construction materials procurement visibility dashboard. Replaces Excel + WhatsA
 | File | Purpose |
 |---|---|
 | `docs/Project-Context.md` | Where we left off last session. Read first. |
-| `docs/Project-Spec.md` | What we're building. The product spec. |
+| `docs/Project-Spec-v2.md` | Current direction: PO fulfillment + storage (pivot from real customer requirements). |
+| `docs/Project-Spec.md` | Original v1 spec, superseded but kept as record. |
 | `docs/claude-rule.md` | How Claude must write code on this project (80/20, vertical slices). |
 | `docs/learned.md` | User's personal learning log. User-owned. |
 | `AGENTS.md` | Reminder: Next.js 16 has breaking changes — consult `frontend/node_modules/next/dist/docs/`. |

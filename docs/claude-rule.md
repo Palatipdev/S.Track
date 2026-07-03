@@ -19,6 +19,11 @@ Examples of what Claude writes directly: every subsequent GET/POST/PATCH endpoin
 
 **Periodic recall tests**: After writing 3–4 instances of the same pattern, randomly assign the next one to the user as a solo task. Claude acts as tutor/crutch only — hints and error fixes, no writing the code. This keeps retention sharp without slowing shipping on every repetition.
 
+**Recall over recognition (added 2026-07-02)**: Reading Claude's code builds *recognition* ("yes, that looks right"), not *recall* (producing it from a blank page). Only recall makes it stick. So:
+- Claude must NOT write more than ~2 repeated-pattern slices in a row without handing the next one back to the user as a solo recall rep (hints + error-checking only, no writing).
+- Track this across the session. If the last few slices were all Claude-written, the next repeat is the user's — do not wait to be asked.
+- The goal for the user is NOT to memorize syntax (FormData rules, exact fetch options, etc. — always look those up, everyone does). The goal is to recall the *trigger*: "this situation → this tool/pattern." Measure learning by "do I know what the situation needs," not "can I type it from memory."
+
 ---
 
 ## 1. The 80 / 20 Split

@@ -123,15 +123,21 @@ Capture things you actually understood (not just what got built). Vibe-coded out
 - Open question I still have:
   -
 
-  ### 2026-02-07 — POST delivery photos
+  ### 2026-02-07 — POST delivery photos , Wired to frontend, Tested end-to-end
 - What I learned (in my own words):
   - Dealt with reading file in FASTAPI and creating Supabase bucket, which is inserted in the endpoint using f"...." which was new syntaxes
   - File was send in as parameter then await File.read() is used to give byte then sha256 something something turnt it into hash strings
   - File was used as input type in the frontend and the async function utilises FormData() which is new.
+  - Encontered access problem with supabase.storage , previously used anon key which cant bypass row level security, need to initialise another supabase_admin variable this time with service_role key to bypass RLS
 - Why it matters / where it applies:
-  - hashing is done on the server side (fastapi) to prevent fraud of uploading the same byte i.e. 
+  - hashing is done on the server side (fastapi) to prevent fraud of uploading the same byte i.e.
+  - RLS access control is important and i need to be able to know what can access what so what should be given control by which variable etc.
+  - I should learn reading the terminal instead of copy and pasting error lines into claude. Only last few lines matter so dont get overwhelmed
 - Open question I still have:
   - Formdata() purposes and syntax compared to normal type of input are still confusing to me.
+
+- Answers:
+FormData(): used when the body contains a file (raw bytes). Regular inputs go as JSON via JSON.stringify with Content-Type: application/json. Files can't fit in JSON, so FormData sends multipart/form-data instead, and the browser sets the Content-Type boundary automatically (which is why you leave that header off in the fetch).
 
   ### 2026-03-07 — 
 - What I learned (in my own words):
