@@ -20,6 +20,28 @@ The v1 fraud thesis survives in a new form. Instead of catching inflation betwee
 
 ---
 
+## Alignment with SBR-MMS (the manager's own design work)
+
+The manager is designing the company's process standard ("SBR-MMS", forms FM-001–009, processes P-01–P-07) in parallel, via her own ChatGPT sessions (transcript reviewed 2026-07-04). Rule: **her manual and this app are one system, not two.** The app digitizes her forms; screens adopt her form codes so paper standard and software stay identical by construction.
+
+| Her form | Meaning | App equivalent |
+|---|---|---|
+| FM-001 แผนการใช้วัสดุรายสัปดาห์ | Weekly material plan (BOQ-driven) | Out of app scope for now (planning subsystem) |
+| FM-002 ใบขอซื้อวัสดุ | Purchase request, approval chain: store chain checks → project management approves | v1 `material_requests` flow returns here — Phase B |
+| FM-003 ใบรับวัสดุ | Goods receipt, no approver | `receipts` + `receipt_lines` — Phase A |
+| FM-004 ใบเบิกวัสดุ | Withdrawal: requester fills, project store verifies, **no approver** | `withdrawals` — Phase A, single-step |
+| FM-005 ใบโอนวัสดุ | Transfer between stores | `stock_movements` transfer types — Phase B |
+| FM-006 ใบคืนวัสดุ | Return of leftover material | `return` movement — Phase B |
+| FM-007 ใบตรวจสภาพ | Condition inspection before reuse | inspection record — Phase B |
+| FM-008 ใบตัดจำหน่าย | Disposal/write-off (management approves, accounting receives) | `dispose` movement — Phase B/C |
+| FM-009 รายงานปิดโครงการ | Project closing report | report — Phase C |
+
+Her stated highest-value outcome: leftover material from finished projects returning to stock, getting condition-checked, and being reused in new projects instead of sitting abandoned at sites. The return/reuse loop is the pilot's centerpiece feature and the demo that will land with her.
+
+Scope guard: her ChatGPT sessions are inflating the paper project toward "SBR-OS" (5 subsystems, 120–150 page manual). The app deliberately targets only the store core (P-03 → P-06). Planning, purchasing upstream (BOQ → plan → PR), cost control, and knowledge management stay out of the app until the store core is piloted.
+
+---
+
 ## What Stays / What Changes
 
 | Piece | Fate |
@@ -29,7 +51,7 @@ The v1 fraud thesis survives in a new form. Instead of catching inflation betwee
 | Suppliers table | Stays |
 | Deliveries + delivery photos (hash, GPS, server timestamps) | Stays, becomes the "goods receipt" flow |
 | Append-only event tables, soft delete, server timestamps | Stays, extended to stock movements |
-| Material requests → approval flow | Demoted. Tables kept for now, UI de-emphasized. May return later as the เบิก approval flow |
+| Material requests → approval flow | Not deleted — confirmed real by the manager's own design (FM-002 ใบขอซื้อวัสดุ has a genuine approval chain: store checks → project management approves). Re-scoped to Phase B as the purchase-request flow, not attached to withdrawals (FM-004, which has no approver) |
 | PO creation UI | Repurposed: POs are now *ingested* (entered/imported from the ERP), not authored here |
 | Requested-vs-ordered variance | Retired. New integrity signal: ordered vs received vs accepted per PO line |
 | Budget auto-deduct | Parked. Budget lives in the ERP; revisit only if she asks |
@@ -55,19 +77,26 @@ Note from call: "user can approve for delivery but can't approve for material." 
 Carried over: `companies`, `users`, `projects`, `project_members`, `suppliers`, event tables.
 
 ### storage_locations
-Hierarchical. Head office store (high-value items), factory, and site units (หน่วยงาน broken into หน่วย).
-- `id`, `company_id`, `parent_id` (nullable FK to self), `name`, `type` (`head_office` | `factory` | `site_unit`), `deleted_at`, `created_at`
+Hierarchical, three confirmed levels from the manager's design: สโตร์กลาง (1 central store) → สโตร์หน่วยงาน (~10 unit stores) → สโตร์โครงการ (one per active project). New pattern: self-referencing FK (a location's parent is another location) — first time this project has modeled a hierarchy this way.
+- `id`, `company_id`, `parent_id` (nullable FK to self), `name`, `type` (`central` | `unit` | `project_site`), `deleted_at`, `created_at`
+
+### location_members (site leader assignment)
+Same shape as the existing `project_members` join table, just for locations.
+- `location_id` (FK), `user_id` (FK), `role` (text, e.g. `"leader"`), `PRIMARY KEY(location_id, user_id)`
 
 ### items (master catalog)
-One row per stock code. Accounting owns the codes (เพิ่มรหัส stock).
-- `id`, `company_id`, `code` (unique per company), `name`, `category` (electric, hydraulic, tractor, ...), `item_type` (`material` | `equipment`), `unit`, `deleted_at`, `created_at`
+One row per exact stock variant (confirmed with the manager's example PO: same material at different dimensions — e.g. ไม้สัก at 150cm vs 160cm vs 170cm — are tracked as separate rows, not collapsed). `spec` is free text, not structured columns (width/thickness/length), because it varies per category (lumber has dimensions, cement doesn't, rebar has diameter) and filtering/search by spec is confirmed **not** needed — so no query requirement forces structure. Duplicate-row risk from inconsistent typing is solved at the UI layer: an autocomplete/picker over existing items forces reuse of the same row instead of retyping, rather than trying to parse or normalize text after the fact.
+- `id`, `company_id`, `code` (nullable text — manager's draft scheme exists: `MT-C-001` cement, `MT-S-001` steel, `EL-001` electrical, `PL-001` plumbing, `TL-001` tools), `name` (e.g. "ไม้สัก"), `category` (confirmed set from her design: ก่อสร้าง / ไฟฟ้า / ประปา / เครื่องมือ), `spec` (text, nullable — e.g. `"2 1/2\" x 7\" x 150cm"`), `base_unit`, `is_active`, `deleted_at`, `created_at`
+- **Open risk**: `base_unit` assumes one fixed unit per item. Confirm with manager whether the same item is ever bought/counted in different units (see Questions).
 
 ### purchase_orders (new meaning: ingested, not authored)
-- `id`, `company_id`, `po_number` (from ERP, unique per company), `supplier_id`, `project_id` (nullable), `status` (`open` | `partially_received` | `received` | `closed` | `cancelled`), `expected_delivery`, `deleted_at`, `created_at`
+Real PO example (SC10-6907-0008) confirmed these fields exist and aren't in the original draft: VAT (7%), discount, a three-signature approval chain (ผู้สั่งซื้อ/ผู้ตรวจสอบ/ผู้อนุมัติ), and an "posted to accounting" (ลงบัญชีแล้ว) stamp with its own date. Dates on the physical PO are Buddhist calendar (พ.ศ.) — convert on ingest (`ce_year = parseInt(be_year) - 543`).
+- `id`, `company_id`, `po_number` (text, matches ERP format e.g. `SC10-6907-0008`), `supplier_id`, `project_id` (nullable — PO example showed exactly one project per PO), `project_code` (text, e.g. `BR69011` — separate from `projects.name`), `status` (`open` | `partially_received` | `received` | `closed` | `cancelled`), `order_date`, `expected_delivery`, `subtotal`, `discount_amount`, `vat_amount`, `net_total`, `posted_to_accounting_at` (nullable), `deleted_at`, `created_at`
 
 ### po_lines
-Expected distribution lives here: each line knows which location it should end up at.
-- `id`, `purchase_order_id`, `item_id`, `ordered_qty`, `unit`, `unit_cost`, `destination_location_id`
+Expected distribution lives here: each line knows which location it should end up at. Real PO example showed two quantity concepts that aren't the same number: a piece count embedded in the free-text description (e.g. "จำนวน 8 ตัว") and a measured quantity in the `จำนวน` column used for pricing (e.g. 12.00 เมตร = 8 pieces × 1.5m each). Both are kept, not collapsed into one `quantity`.
+- `id`, `purchase_order_id`, `item_id` (nullable — see note), `description` (text, verbatim from the PO, kept for audit even when `item_id` is linked), `piece_count` (nullable), `measured_qty`, `unit`, `unit_cost`, `destination_location_id`
+- **Note**: `item_id` nullable because real PO line text is messy free text; a line should still be enterable even before it's matched/linked to a catalog `items` row.
 
 ### receipts (evolution of v1 deliveries)
 One receipt = one physical arrival event. Partial deliveries are normal: many receipts per PO.
@@ -86,9 +115,9 @@ Every change to stock is an INSERT here. Never UPDATE, never DELETE. Same integr
 Current qty per item per location. Maintained transactionally alongside each movement insert; movements are the audit trail, this is the fast lookup.
 - `item_id`, `location_id`, `qty` (composite PK)
 
-### withdrawals (เบิก)
-Who took what, when, for which project.
-- `id`, `company_id`, `project_id`, `location_id`, `requested_by`, `status` (pending approval? confirm with manager), `created_at`
+### withdrawals (เบิก) — maps to FM-004
+Who took what, when, for which project. Provisionally answered by the manager's own Data Flow Matrix: FM-004 has **no approver** — the requester (ผู้เบิก) fills it, the project store (สโตร์โครงการ) verifies it, and it takes effect. So this is a single-step log with a verifier, not an approval workflow. (One confirming sentence to the manager still outstanding; approval chains belong to FM-002 purchase requests, not withdrawals.)
+- `id`, `company_id`, `project_id`, `location_id`, `requested_by`, `verified_by` (nullable FK to users — the store keeper who checked it), `created_at`
 - `withdrawal_lines`: `item_id`, `qty`
 
 ### equipment + repairs — v2 phase, design later
@@ -107,13 +136,13 @@ Equipment units (serial-tracked), repair status (`in_use` | `in_repair` | `out_o
 
 ## Phasing
 
-- **Phase A (build now)**: locations, items, PO ingest, receipts + checklist, stock movements/levels, withdrawals, stock dashboard.
-- **Phase B**: transfers between locations, stocktake/adjustments, CSV import of POs, approval workflow on withdrawals.
-- **Phase C**: equipment lifecycle (repair, depreciation, disposal), notifications, ERP API integration if ever possible.
+- **Phase A (build now)**: locations, items, PO ingest, receipts + checklist (FM-003), stock movements/levels, withdrawals (FM-004, single-step), stock dashboard.
+- **Phase B — the return/reuse loop (her #1 value)**: returns (FM-006), condition inspection (FM-007), transfers between stores (FM-005), disposal (FM-008), "ของคืนจากโครงการ" visibility (leftover stock with original-project provenance), purchase requests w/ approval chain (FM-002), QR codes (generate per item/stock row, scan to receive/withdraw/transfer/return), stocktake/adjustments, CSV import if พจมาน can export.
+- **Phase C**: equipment lifecycle (repair, depreciation, disposal), project closing report (FM-009), KPI/dashboard reports, notifications, ERP API integration if ever possible.
 
 ## Out of Scope (unchanged unless she pushes)
 
-Thai localization (ask, workers may need it), barcode scanning, offline mode, native app, accounting write-back to the ERP.
+Thai localization of the UI (ask — workers likely need it, may pull into Phase B), offline mode, native app, accounting write-back to the ERP, the wider "SBR-OS" ambition (planning, cost control, knowledge management subsystems).
 
 ---
 
@@ -136,36 +165,47 @@ Postgres at this company's realistic volume (tens of POs per week, a few thousan
 
 - 2026-07-03: Stock modeled as append-only `stock_movements` + maintained `stock_levels`, matching the v1 audit-first design. Derived-only (view over movements) rejected for now: simpler to read, but every stock lookup pays the aggregation cost and it complicates indexing.
 - 2026-07-03: POs ingested manually first. CSV import deferred until we see a real ERP export.
+- 2026-07-03: Reviewed a real PO (SC10-6907-0008) from the company. Confirmed VAT/discount fields, three-signature approval chain, an accounting-posted stamp/date, Buddhist calendar dates, and that project code (BR69011) is separate from project name — folded into `purchase_orders`.
+- 2026-07-03: **Assumption, not confirmed with manager**: items are tracked as separate catalog rows per exact size/spec variant (e.g. each lumber dimension is its own row), based on domain knowledge of construction materials. Not asked directly to avoid wasting her time on something already known. Revisit if it turns out wrong.
+- 2026-07-03: Confirmed with the user (not the manager) that spec-based filtering/search (e.g. "lumber under 2m") is not needed. This is why `items.spec` is a plain text field, not structured numeric columns — no query requirement exists to justify the structure.
+- 2026-07-03: `po_lines` keeps both `piece_count` and `measured_qty` rather than one `quantity`, because the real PO shows they aren't the same number (8 pieces × 1.5m = 12.00m billed) and pricing is based on the measured quantity, not the piece count.
+- 2026-07-03: Whether `stock_levels` should be counted by `piece_count` or `measured_qty` is unresolved — depends on how workers physically count stock in the yard. Assumed `piece_count` for now (matches how a person actually counts inventory); revisit if wrong.
+- 2026-07-04: Reviewed the manager's own SBR-MMS ChatGPT transcript. Withdrawal approval question provisionally resolved (FM-004 has no approver; requester + store verification only — approval chains belong to purchase requests, FM-002). Store hierarchy corrected to central/unit/project_site (1 / ~10 / per-project). Item code scheme and category set adopted from her draft. Return/reuse loop promoted to the whole of Phase B as her stated highest-value outcome. QR codes moved from out-of-scope to Phase B. App screens will adopt her FM form codes so the paper standard and the software stay one system.
+- 2026-07-04: Scope guard recorded: the manager's ChatGPT sessions are expanding her paper project toward "SBR-OS" (5 subsystems, 120–150 page manual). The app intentionally implements only the store core (P-03 → P-06) until the pilot proves out.
 
 ---
 
 ## Questions for the Manager
 
-**PO / ERP**
-1. Can the ERP export POs (Excel/CSV)? What columns does a PO actually have? Get one real example PO.
-2. Is a PO always tied to one project and one supplier, or can it mix?
-3. What does the PO numbering look like, and is it unique forever?
+Only two questions actually block starting Phase A — everything else below is either already decided, a stated assumption, or safe to defer without risk of a schema rewrite later.
 
-**Receiving**
-4. Who physically receives goods at each location type? Do they carry smartphones, and is there internet at the sites?
-5. What reject reasons do they use today when a delivery is bad? (Fixed list beats free text.)
-6. Partial deliveries: when is a PO line considered "close enough" to close? Is under-delivery ever accepted?
-7. What is the actual return-to-supplier process? Who negotiates, what proof do they keep?
+### Blocking — must answer before finalizing `items`/`po_lines` units
 
-**Stock / Withdrawal**
-8. Does เบิก need approval before stock leaves? By whom? (The call notes say users approve deliveries but not material, need the exact rule.)
-9. Do units transfer stock between each other? Who authorizes?
-10. Is there periodic stocktaking? How do they handle count mismatches today?
-11. Does accounting already have the full stock code list (รหัส)? Can we get it as a file?
-12. What units of measure exist (bag, pcs, m, ลูก, ...)? Standard list?
+1. ~~**เบิก (withdrawal) approval**~~ — provisionally answered by her SBR-MMS transcript (2026-07-04): FM-004 has no approver, requester + project-store verification only. One confirming sentence still worth sending; `withdrawals` is buildable now as single-step.
+   > Sent: "การเบิกของออกไปใช่ ต้องให้ผู้จัดการ (owner) อนุมัติไหมครับ หรือหัวหน้าหน่วยสามารถเบิกได้เลย"
+2. **Unit consistency** (still open): is the same item ever bought/counted in different units across purchases (ไม้สัก sometimes เมตร, sometimes แผ่น/ตัว; ปูน sometimes ถุง, sometimes ตัน)? Decides whether `unit` stays fixed on `items` or has to move to per-transaction with conversion.
+   > Sent: "ทุกครั้งที่ซื้อวัสดุเดิมเพิ่ม เรานับเปนหน่วยเดียวกันตลอดไหม (เช่น ไม้สัก = เมตร แต่บางทีเขียนเปนแผ่น/ตัว หรือ ปูน เปนถุง/ตัน)"
+3. **New (high value, not schema-blocking): ask her for the FM form drafts** — especially FM-002, FM-003, FM-004. Her form layouts are literally the field specs for the app's screens; getting them early prevents building screens she'll ask to rearrange.
 
-**Equipment (for Phase C, ask early anyway)**
-13. What separates "equipment" from "material" in their heads? Serial numbers?
-14. Depreciation: what method and where do the rates come from? Straight-line per category?
-15. Repairs: internal team or external vendor? What statuses matter to her?
+### Already resolved — do not re-ask
 
-**People / UI**
-16. Full role list and who can do what (owner, supervisor, purchaser, accountant, storage keeper, worker)?
-17. Does the UI need to be in Thai for workers?
-18. Rough volumes: POs per week, number of active items, number of locations, number of users?
-19. The killer question: what does she want to see on one screen every morning? Build that screen first.
+- Size/spec separation → assumed yes (see Decision Log).
+- Spec filtering/search → confirmed not needed.
+
+### Worth asking eventually, not blocking (cheap to adjust later — enum/constraint changes, not schema rewrites)
+
+- Can the ERP/พจมาน export POs as a real file (not just "yes/no" — get an actual export if it exists)? Doesn't block Phase A since manual entry is the starting design regardless.
+- What reject reasons do they use for bad deliveries today? (Fixed list beats free text — currently a placeholder enum: `good` | `damaged_package_unopened` | `damaged` | `wrong_item`.)
+- Partial deliveries: when is a PO line "close enough" to close?
+- Actual return-to-supplier process — who negotiates, what proof is kept.
+- Is a PO ever split across projects/suppliers, or always one-to-one (the example PO showed one-to-one)?
+- Full role list beyond what's drafted above.
+- Does the UI need to be in Thai for workers?
+- Rough volumes (POs/week, active items, locations, users) — informs whether performance is ever a real concern (it won't be, but good to confirm scale).
+- What does she want to see on one screen every morning? Build that screen first once known.
+
+### Deferred to Phase C entirely (equipment)
+
+- What separates "equipment" from "material" — serial numbers?
+- Depreciation method and rate source.
+- Repair process — internal team or external vendor, what statuses matter.
