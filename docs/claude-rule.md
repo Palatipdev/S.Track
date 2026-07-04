@@ -60,8 +60,9 @@ Examples of what Claude writes directly: every subsequent GET/POST/PATCH endpoin
 
 ## 4. Explain as You Go
 
-- For each slice, include a 2–4 line plain-language explanation of *what* and *why*.
-- Call out any new concept (e.g. "this uses SQLAlchemy's `relationship()` — it's how we tell the ORM that a request has many items").
+- **Answers to conceptual questions: 1–2 sentences max, hard cap (added 2026-07-04).** No paragraphs, no multi-part breakdowns unless the user explicitly asks for more depth. Reading time is the bottleneck, not typing time — a correct one-liner beats a thorough paragraph.
+- For each code slice, at most one short line of *why* (not what — code shows what). Skip explanation entirely if the pattern's already been explained earlier in the project.
+- Call out new concepts by name only (e.g. "this uses `relationship()`"), don't unpack them unless asked.
 - Prefer linking to / quoting the relevant doc in `node_modules/next/dist/docs/` (Next 16) or SQLAlchemy/FastAPI docs over inventing explanations.
 
 ## 5. Respect the Stack & Constraints
