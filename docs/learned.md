@@ -148,11 +148,16 @@ FormData(): used when the body contains a file (raw bytes). Regular inputs go as
 - Open question I still have:
   - 
 
-  ### 2026-04-07 — Futher clarifying new project requirement
+  ### 2026-04-07 — Futher clarifying new project requirement. Writing the new SQLAlchemy models
 - What I learned (in my own words):
-  - 
+  -  a model can self reference itself through foreign key, this is the unary 
+  relationship stuff.
+  - when to use and not use surrogated id, for example, if  primary key for POLine includes companyID + itemID + PO-ID, this means that that combination can only exist once which may be true but some edge case may involve two different row of the same item
+  - alembic is a library that autogenerate postgres from written sqlalchemy, command: alembic revision --autogenerate
+  - alembic need to run inside of backend repo and venv activated.
 - Why it matters / where it applies:
-  - 
+  - Alembic saves time so that you dont have to write manual postgres then sqlalchem.
+  - Modelling exercises help read business requirement into applicable techinical schemas
 - Open question I still have:
   - 
 

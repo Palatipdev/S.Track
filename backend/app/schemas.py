@@ -24,11 +24,17 @@ class OrderItemIn(BaseModel):
     unit: str
     unit_cost: Decimal
 
+
+class POItemIn(BaseModel):
+    item_id: int
+    item_qty: Decimal
+    item_price: Decimal
+    location_id: int
 class PurchaseOrderIn(BaseModel):
-    material_request_id: int
     supplier_id: int
+    project_id: Optional[int]
     expected_delivery: date
-    items: list[OrderItemIn]
+    po_items: list[POItemIn]
 
 class ProjectIn(BaseModel):
     name: str
@@ -48,5 +54,53 @@ class DeliveryIn(BaseModel):
     gps_lat: Optional[Decimal] = None
     gps_lng: Optional[Decimal] = None
     items: list[DeliveryItemIn]
+
+class ItemIn(BaseModel):
+    name: str
+    code: Optional[str] = None
+    category: str
+    spec: str
+    unit: str
+    is_active: bool
+
+class LocationMember(BaseModel):
+    role: str
+    user_id: int
+
+class StorageLocationIn(BaseModel):
+    parent_storage: Optional[int]
+    project_id: Optional[int]
+    name: str
+    type : str
+    location_member: list[LocationMember]
+
+
+class ReceiptLine(BaseModel):
+    po_item_id: int
+    received_qty: Decimal
+    accepted_qty: Decimal
+    rejected_qty: Decimal
+    condition: str
+    condition_note: Optional[str]
+    return_to_supplier: bool
+
+class ReceiptPhotoIn(BaseModel):
+    file_key: str
+    sha256_hash: str
+class ReceiptIn(BaseModel):
+    po_id: int
+    location_id: int
+    po_lines: list[ReceiptLine]
+    photos: list[ReceiptPhotoIn]
+    note: Optional[str]
+
+
+class WithdrawalLineIn(BaseModel):
+    item_id : int
+    quantity : Decimal
+class WithdrawalIn(BaseModel):
+    project_id : int
+    location_id : int
+    withdrawalLines: list[WithdrawalLineIn]
 
     
