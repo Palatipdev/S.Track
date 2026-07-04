@@ -19,6 +19,9 @@ class UserRole(enum.Enum):
     factory  = "factory"
     engineer = "engineer"
 
+class LocationRole(enum.Enum):
+    leader = "leader"
+    employee = "employee"
 
 class ProjectStatus(enum.Enum):
     active    = "active"
@@ -42,6 +45,10 @@ class OrderStatus(enum.Enum):
     pending   = "pending"
     delivered = "delivered"
     cancelled = "cancelled"
+class StorageStatus(enum.Enum):
+    central = "central"
+    unit = "unit"
+    project_site = "project_site"
 
 
 # ---------------------------------------------------------------------------
@@ -215,3 +222,23 @@ class DeliveryEvent(Base):
     event_type  = mapped_column(Text, nullable=False)
     payload     = mapped_column(JSONB)
     created_at  = mapped_column(DateTime(timezone=True), nullable=False, server_default=func.now())
+
+class StorageLocation(Base):
+    __tablename__ = "storage_locations"
+
+    id = mapped_column(BigInteger, primary_key=True)
+    parent_storage_id = mapped_column(BigInteger, ForeignKey("storage_locations.id"), nullable = True)
+    company_id = mapped_column(BigInteger, ForeignKey("companies.id"), nullable = False)
+    project_id = mapped_column(BigInteger, ForeignKey("projects.id"), nullable = True)
+    name = mapped_column(Text, nullable = False)
+    type = mapped_column(Enum(StorageStatus), nullable = False)
+    created_at = mapped_column(DateTime(timezone=True), nullable = False, server_default=func.now())
+    deleted_at = mapped_column(DateTime(timezone=True))
+
+class LocationMembers(Base):
+    __tablename__ = "location_members"
+    __table_args__ = (PrimaryKeyConstraint("storage_id", "user_id"),)
+
+    user_id = mapped_column(BigInteger, ForeignKey("users.id") , nullable = False)
+    storage_id = mapped_column(BigInteger, ForeignKey("storage_locations.id"),nullable =False)
+    role = mapped_column(Enum(LocationRole), nullable = False)
