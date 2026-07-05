@@ -162,10 +162,14 @@ FormData(): used when the body contains a file (raw bytes). Regular inputs go as
 - Open question I still have:
   - 
 
-### 2026-05-07 — <topic>
+### 2026-05-07 — Endpoints for V2 Spec
 - What I learned (in my own words):
+  - when entirety of a model is calculated on the server side (endpoint) you can utilise other Post endpoint (receipt) to write stockMovement and stockLevel since it contain all the necessary information
+  - juggled three models at the same time in the receipt post endpoint PO fulfilment status. very confusing but once slowed down understand it for 10 seconds until i start writing the code agagain. The whole endpoint had 7 models in used which was mind boggling
 - Why it matters / where it applies:
+  - juggling logic that requires multiple models are thing that will recur when doing backend work and its one of the important fundamental to get good at
 - Open question I still have:
+
 
 ### 2026-06-07 — <topic>
 - What I learned (in my own words):

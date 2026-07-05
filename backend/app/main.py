@@ -40,6 +40,11 @@ from app.models import ReceiptPhoto as ReceiptPhotoModel
 from app.models import StockLevel as StockLevelModel
 from app.models import StockMovement as StockMovementModel
 
+# Withdrawals
+from app.models import Withdrawal as WithdrawalModel
+from app.models import WithdrawalLine as WithdrawalLineModel
+from app.schemas import WithdrawalIn
+
 from fastapi.middleware.cors import CORSMiddleware
 
 
@@ -300,10 +305,34 @@ def add_receipt(body: ReceiptIn, db: Session = Depends(get_db), current_user: Us
     else:
         po.status = "received"
     db.add(po)
-        
+
 
 
     db.commit()
     db.refresh(request)
     return request
+
+
+@app.post("/withdrawal")
+def add_withdrawal(body: WithdrawalIn, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+    withdrawal = WithdrawalModel(company_id=current_user.company_id, project_id=body.project_id, location_id=body.location_id, requested_by=current_user.id)
+    db.add(withdrawal)
+    db.commit()
+    db.refresh(withdrawal)
+
+    for line in body.withdrawalLines:
+        new_line = WithdrawalLineModel(withdrawal_id=withdrawal.id, item_id=line.item_id, qty=line.quantity)
+        db.add(new_line)
+        # TODO(user): insert a StockMovement (movement_type="withdraw") and decrement StockLevel for this item/location
+        stockMovement = StockMovementModel(company_id = current_user.company_id, item_id = line.item_id , location_id = body.location_id, movement_type = "withdraw", qty = line.quantity, project_id = body.project_id, actor_id = current_user.id, ref_type = "withdraw", ref_id = withdrawal.id)
+        db.add(stockMovement)
+        stockLevel = db.query(StockLevelModel).filter(StockLevelModel.item_id == line.item_id, StockLevelModel.location_id == withdrawal.location_id).first()
+        # a stock must exist otherwise we wound't have withdrawal to loop over, but what about we withdraw more than what we have
+        # this should still be seen by the manager if its negative
+        stockLevel.qty -= line.quantity 
+        db.add(stockLevel)
+
+    db.commit()
+    db.refresh(withdrawal)
+    return withdrawal
 
