@@ -12,11 +12,29 @@ from app.auth import get_current_user
 from app.schemas import PurchaseOrderIn
 from app.models import PurchaseOrder as PurchaseOrderModel
 from app.models import OrderItem as OrderItemModel
+from app.models import POItem as POItemModel
 from app.models import Delivery as DeliveryModel
 from app.models import DeliveryItem as DeliveryItemModel
 from app.schemas import DeliveryItemIn, DeliveryIn, ProjectIn, SupplierIn
 from app.models import Project as ProjectModel, Supplier as SupplierModel
 from app.models import DeliveryPhoto as DeliveryPhotoModel
+
+# Storage location
+from app.models import StorageLocation as StorageLocationModel
+from app.schemas import StorageLocationIn
+from app.models import LocationMembers as LocationMemberIn
+from app.schemas import LocationMember
+
+# Items
+from app.models import Items as ItemModel
+from app.schemas import ItemIn
+
+# Receipts
+from app.models import Receipt as ReceiptModel
+from app.schemas import ReceiptIn
+from app.schemas import ReceiptLine
+from app.models import ReceiptLine as ReceiptLineModel
+from app.models import ReceiptPhoto as ReceiptPhotoModel
 
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -83,20 +101,20 @@ def show_request_items(request_id: int, db: Session = Depends(get_db), current_u
 
 @app.post("/purchase-orders")
 def purchase_order(body: PurchaseOrderIn, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
-    checkStatus = db.query(MaterialRequestModel).filter(MaterialRequestModel.id == body.material_request_id).first()
-    if not checkStatus:
-        raise HTTPException(status_code=404, detail="Request not found")
-    if checkStatus.status.value != "approved":
-        raise HTTPException(status_code=403, detail="Request not approved")
-    newPurchase =  PurchaseOrderModel(company_id=current_user.company_id, material_request_id= body.material_request_id, supplier_id= body.supplier_id, expected_delivery= body.expected_delivery, total_cost = sum(item.quantity * item.unit_cost  for item in body.items))
-
+    newPurchase = PurchaseOrderModel(
+        company_id=current_user.company_id,
+        supplier_id=body.supplier_id,
+        project_id=body.project_id,
+        expected_delivery=body.expected_delivery,
+        total_cost=sum(item.item_qty * item.item_price for item in body.po_items),
+    )
     db.add(newPurchase)
     db.commit()
     db.refresh(newPurchase)
 
-    for item in body.items:
-        newItemOrder =  OrderItemModel(purchase_order_id= newPurchase.id, item_name= item.item_name, quantity= item.quantity, unit= item.unit, unit_cost= item.unit_cost, request_item_id = item.request_item_id )
-        db.add(newItemOrder)
+    for item in body.po_items:
+        newPOItem = POItemModel(po_id=newPurchase.id, item_id=item.item_id, item_qty=item.item_qty, price=item.item_price, location=item.location_id)
+        db.add(newPOItem)
 
     db.commit()
     return newPurchase
@@ -199,4 +217,52 @@ async def upload_delivery_photo(delivery_id: int , file: UploadFile = File(), cu
     request = DeliveryPhotoModel(delivery_id = delivery_id, file_key = f"{delivery_id}/{myString}", sha256_hash = myString)
     db.add(request)
     db.commit()
+    return request
+
+@app.post("/storage_location")
+def storage_location(body: StorageLocationIn, db: Session = Depends(get_db), current_user:User = Depends(get_current_user)):
+    request = StorageLocationModel(parent_storage_id = body.parent_storage, company_id = current_user.company_id, project_id = body.project_id, name = body.name , type = body.type)
+    db.add(request)
+    db.commit()
+    db.refresh(request)
+
+    for item in body.location_member:
+        new_item = LocationMember(role= item.role, user_id = item.user_id, storage_id = request.id)
+        db.add(new_item)
+    db.commit()
+    db.refresh(request)
+
+    return request
+    
+@app.get("/storage_location")
+def get_storage_locations(db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+    return db.query(StorageLocationModel).filter(StorageLocationModel.company_id == current_user.company_id).all()
+
+@app.post("/items")
+def enter_item(body: ItemIn, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+    request = ItemModel(item_name = body.name, company_id = current_user.company_id, code = body.code, category = body.category, spec = body.spec, unit = body.unit, is_active = body.is_active , )
+    db.add(request)
+    db.commit()
+    db.refresh(request)
+    return request
+@app.get("/items")
+def get_item(db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+    return db.query(ItemModel).filter(ItemModel.company_id == current_user.company_id).all()
+
+
+@app.post("/receipt/{receipt_id}/photos")
+async def upload_receipt_photo(receipt_id: int, file: UploadFile = File(), current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    check = db.query(ReceiptModel).filter(ReceiptModel.id == receipt_id).first()
+    if not check:
+        raise HTTPException(status_code = 404, detail = "receipt not found")
+    if check.company_id != current_user.company_id:
+        raise HTTPException(status_code = 403, detail  = "invalid request")   
+    file_byte = await file.read()
+    myString = hashlib.sha256(file_byte).hexdigest()
+    supabase_admin.storage.from_("receipt-photos").upload(f"{receipt_id}/{myString}", file_byte)
+    
+    request = ReceiptPhotoModel(receipt_id = receipt_id, file_key = f"{receipt_id}/{myString}" , sha256_hash = myString)
+    db.add(request)
+    db.commit()
+    db.refresh(request)
     return request
