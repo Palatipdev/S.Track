@@ -336,3 +336,16 @@ def add_withdrawal(body: WithdrawalIn, db: Session = Depends(get_db), current_us
     db.refresh(withdrawal)
     return withdrawal
 
+@app.get("/withdrawal")
+def get_withdrawals(db: Session = Depends(get_db), current_user : User = Depends(get_current_user)):
+    return db.query(WithdrawalModel).filter(WithdrawalModel.company_id == current_user.company_id).all()
+
+@app.get("/stock_level/{location_id}")
+def get_stock_level(location_id: int, db: Session = Depends(get_db), current_user : User = Depends(get_current_user)):
+    location = db.query(StockLevelModel).filter(StockLevelModel.location_id == location_id).all()
+    storage = db.query(StorageLocationModel).filter(StorageLocationModel.id == location_id).first()
+    if not storage:
+        raise HTTPException(status_code = 404, detail = "stock doesnt exist")
+    if storage.company_id != current_user.company_id:
+        raise HTTPException(status_code = 403 , detail = "Unauthorised Access")
+    return location
