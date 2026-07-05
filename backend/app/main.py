@@ -256,6 +256,8 @@ def add_receipt(body: ReceiptIn, db: Session = Depends(get_db), current_user: Us
     db.add(request)
     db.commit()
     db.refresh(request)
+    fulfilled_flags = []
+
     for line in body.po_lines:
         new_line = ReceiptLineModel(
     receipt_id=request.id,
@@ -280,6 +282,26 @@ def add_receipt(body: ReceiptIn, db: Session = Depends(get_db), current_user: Us
         else:
             new_stock = StockLevelModel(item_id = po_item.item_id, location_id = po_item.location, qty = line.accepted_qty)
             db.add(new_stock)
+
+
+    po = db.query(PurchaseOrderModel).filter(PurchaseOrderModel.id == body.po_id).first()
+    all_po_item = db.query(POItemModel).filter(POItemModel.po_id == po.id).all()
+    for po_item in all_po_item:
+        # gives us all the receipt lines of the po_item
+        receiptLines = db.query(ReceiptLineModel).filter(ReceiptLineModel.po_item_id == po_item.id)
+        total_qty = 0
+        for receipt_line in receiptLines:
+            total_qty += receipt_line.accepted_qty
+        fulfilled_flags.append(total_qty >= po_item.item_qty)
+    if not any(fulfilled_flags):
+        po.status = "open"
+    elif False in fulfilled_flags:
+        po.status = "partially_received"
+    else:
+        po.status = "received"
+    db.add(po)
+        
+
 
     db.commit()
     db.refresh(request)
