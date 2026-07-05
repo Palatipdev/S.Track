@@ -162,4 +162,29 @@ FormData(): used when the body contains a file (raw bytes). Regular inputs go as
 - Open question I still have:
   - 
 
+### 2026-05-07 — <topic>
+- What I learned (in my own words):
+- Why it matters / where it applies:
+- Open question I still have:
+
+### 2026-06-07 — <topic>
+- What I learned (in my own words):
+- Why it matters / where it applies:
+- Open question I still have:
+
+### 2026-07-07 — <topic>
+- What I learned (in my own words):
+- Why it matters / where it applies:
+- Open question I still have:
+
+### 2026-08-07 — <topic>
+- What I learned (in my own words):
+- Why it matters / where it applies:
+- Open question I still have:
+
+### 2026-09-07 — <topic>
+- What I learned (in my own words):
+- Why it matters / where it applies:
+- Open question I still have:
+
 <!-- Add new entries above this line -->

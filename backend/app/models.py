@@ -42,11 +42,9 @@ class UrgencyLevel(enum.Enum):
 
 
 class OrderStatus(enum.Enum):
-    open              = "open"
-    partially_received = "partially_received"
-    received          = "received"
-    closed            = "closed"
-    cancelled         = "cancelled"
+    pending   = "pending"
+    delivered = "delivered"
+    cancelled = "cancelled"
 class StorageStatus(enum.Enum):
     central = "central"
     unit = "unit"

@@ -36,6 +36,10 @@ from app.schemas import ReceiptLine
 from app.models import ReceiptLine as ReceiptLineModel
 from app.models import ReceiptPhoto as ReceiptPhotoModel
 
+# Stocks
+from app.models import StockLevel as StockLevelModel
+from app.models import StockMovement as StockMovementModel
+
 from fastapi.middleware.cors import CORSMiddleware
 
 
@@ -121,29 +125,8 @@ def purchase_order(body: PurchaseOrderIn, db: Session = Depends(get_db), current
 
 @app.get("/purchase-orders")
 def get_purchase_orders(db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
-    orders = db.query(PurchaseOrderModel).filter(PurchaseOrderModel.company_id == current_user.company_id).all()
-    result = []
-    for order in orders:
-        request_items = db.query(RequestItemModel).filter(RequestItemModel.material_request_id == order.material_request_id).all()
-        order_items = db.query(OrderItemModel).filter(OrderItemModel.purchase_order_id == order.id).all()
-
-        requested_by_id = {ri.id: ri.quantity for ri in request_items}
-        item_variances = []
-        for item in order_items:
-            if item.request_item_id not in requested_by_id:
-                item_variances.append({"request_item_id": None, "variance_pct": None, "unrequested": True , "item_name": item.item_name, "quantity": item.quantity})
-                continue
-            var = (( item.quantity- requested_by_id[item.request_item_id] ) / requested_by_id[item.request_item_id]) * 100
-            item_variances.append({"request_item_id": item.request_item_id, "variance_pct": var, "item_name": item.item_name, "quantity": item.quantity})
-
-        flagged = any(abs(v["variance_pct"]) > 10 for v in item_variances if v["variance_pct"] is not None)
-
-        result.append({
-            "order": order,
-            "flagged": flagged,
-            "item_variances": item_variances
-        })
-    return result
+    return db.query(PurchaseOrderModel).filter(PurchaseOrderModel.company_id == current_user.company_id).all()
+    
 
 @app.get("/purchase-orders/{order_id}/items")
 def get_order_items(order_id: int ,db:Session = Depends(get_db), current_user: User = Depends(get_current_user)):
@@ -266,3 +249,39 @@ async def upload_receipt_photo(receipt_id: int, file: UploadFile = File(), curre
     db.commit()
     db.refresh(request)
     return request
+
+@app.post("/receipt")
+def add_receipt(body: ReceiptIn, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+    request = ReceiptModel(company_id = current_user.company_id, purchase_order_id = body.po_id, location_id = body.location_id, received_by = current_user.id, note = body.note, gps_lat = body.gps_lat, gps_lng = body.gps_lng)
+    db.add(request)
+    db.commit()
+    db.refresh(request)
+    for line in body.po_lines:
+        new_line = ReceiptLineModel(
+    receipt_id=request.id,
+    po_item_id=line.po_item_id,
+    received_qty=line.received_qty,
+    accepted_qty=line.accepted_qty,
+    rejected_qty=line.rejected_qty,
+    condition=line.condition,
+    condition_note=line.condition_note,
+    return_to_supplier=line.return_to_supplier,
+)
+        db.add(new_line)
+        po_item = db.query(POItemModel).filter(POItemModel.id == line.po_item_id).first()
+        received_location = db.query(StorageLocationModel).filter(StorageLocationModel.id == po_item.location).first()
+        # need to use in stock movement and stock level
+        stockMovement = StockMovementModel(company_id = current_user.company_id,item_id = po_item.item_id , location_id = received_location.id, movement_type = "receive" , qty = line.accepted_qty , project_id = received_location.project_id , actor_id = current_user.id, ref_type = "receipt", ref_id = request.id)
+        db.add(stockMovement)
+        stockLevel = db.query(StockLevelModel).filter(StockLevelModel.item_id == po_item.item_id , StockLevelModel.location_id == received_location.id).first()
+        if stockLevel:
+            stockLevel.qty += line.accepted_qty
+            db.add(stockLevel)
+        else:
+            new_stock = StockLevelModel(item_id = po_item.item_id, location_id = po_item.location, qty = line.accepted_qty)
+            db.add(new_stock)
+
+    db.commit()
+    db.refresh(request)
+    return request
+

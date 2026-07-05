@@ -84,15 +84,14 @@ class ReceiptLine(BaseModel):
     condition_note: Optional[str]
     return_to_supplier: bool
 
-class ReceiptPhotoIn(BaseModel):
-    file_key: str
-    sha256_hash: str
+
 class ReceiptIn(BaseModel):
     po_id: int
     location_id: int
     po_lines: list[ReceiptLine]
-    photos: list[ReceiptPhotoIn]
     note: Optional[str]
+    gps_lat: Optional[str] = None
+    gps_lng: Optional[str] = None
 
 
 class WithdrawalLineIn(BaseModel):
