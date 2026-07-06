@@ -112,6 +112,7 @@ def show_request_items(request_id: int, db: Session = Depends(get_db), current_u
 def purchase_order(body: PurchaseOrderIn, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
     newPurchase = PurchaseOrderModel(
         company_id=current_user.company_id,
+        po_number=body.po_number,
         supplier_id=body.supplier_id,
         project_id=body.project_id,
         expected_delivery=body.expected_delivery,

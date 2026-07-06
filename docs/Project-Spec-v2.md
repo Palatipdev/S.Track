@@ -161,6 +161,22 @@ Postgres at this company's realistic volume (tens of POs per week, a few thousan
 5. Seed real item codes from accounting as pilot data.
 6. Dockerize + deploy for the family pilot.
 
+## Frontend Architecture (Phase A, decided 2026-07-06)
+
+Multi-page app under `/dashboard`, not a single-page dashboard like v1. Shared shell in `dashboard/layout.tsx`: left sidebar nav on desktop (Dashboard, Receive, Stock, Withdraw, Items, Locations), collapsing to a bottom tab bar on mobile since Receive/Withdraw are phone-in-the-field screens. Dark theme carried over from v1; cards on neutral background, status shown as colored chips, one accent color for primary actions. No charts in Phase A — data is too sparse to fill them; stat tiles + tables instead. Charts revisit in Phase B/C reports.
+
+| Route | Screen | Contents |
+|---|---|---|
+| `/dashboard` | PO overview (landing) | Stat tiles (open / partially received / total value), PO table grouped by status, Add PO modal (ingest form: po_number, supplier, project, expected date, line items w/ item picker + destination location) |
+| `/dashboard/po/[id]` | PO detail | Header card, line items with ordered vs received progress per line, receipts history w/ photo thumbnails, "Receive against this PO" action |
+| `/dashboard/receive` | Receive flow (FM-003), mobile-first | Step layout: pick PO → per-line received/accepted/rejected + condition + note → photo capture → GPS → submit. Header shows FM-003 code to match the paper standard |
+| `/dashboard/stock` | Stock view | Location picker (grouped central → unit → project_site), stat tiles incl. negative-stock alerts, item table with search-by-name only |
+| `/dashboard/withdraw` | Withdraw flow (FM-004), mobile-first | Pick project → location → item picker showing live stock qty → qty per line → submit. Warn, don't block, on qty > stock |
+| `/dashboard/items` | Item catalog | Items table + Add Item modal; feeds the autocomplete pickers that enforce row reuse |
+| `/dashboard/locations` | Storage locations | Hierarchy tree view, add-location modal w/ parent picker + member assignment |
+
+Build order: PO list → PO detail → receive flow → stock view → withdraw flow → items/locations admin last (seed via Swagger until then).
+
 ## Decision Log
 
 - 2026-07-03: Stock modeled as append-only `stock_movements` + maintained `stock_levels`, matching the v1 audit-first design. Derived-only (view over movements) rejected for now: simpler to read, but every stock lookup pays the aggregation cost and it complicates indexing.

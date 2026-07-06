@@ -31,6 +31,7 @@ class POItemIn(BaseModel):
     item_price: Decimal
     location_id: int
 class PurchaseOrderIn(BaseModel):
+    po_number: str
     supplier_id: int
     project_id: Optional[int]
     expected_delivery: date

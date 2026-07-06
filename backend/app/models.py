@@ -156,6 +156,7 @@ class PurchaseOrder(Base):
     id                  = mapped_column(BigInteger, primary_key=True)
     company_id          = mapped_column(BigInteger, ForeignKey("companies.id"), nullable=False)
     supplier_id         = mapped_column(BigInteger, ForeignKey("suppliers.id"), nullable=False)
+    po_number           = mapped_column(Text, nullable=False)
     total_cost          = mapped_column(Numeric(14, 2), nullable=False)
     expected_delivery   = mapped_column(Date, nullable=False)
     status              = mapped_column(Enum(OrderStatus), nullable=False, server_default="pending")
