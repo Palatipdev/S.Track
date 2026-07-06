@@ -235,7 +235,7 @@ def get_storage_locations(db: Session = Depends(get_db), current_user: User = De
 
 @app.post("/items")
 def enter_item(body: ItemIn, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
-    request = ItemModel(item_name = body.name, company_id = current_user.company_id, code = body.code, category = body.category, spec = body.spec, unit = body.unit, is_active = body.is_active , )
+    request = ItemModel(item_name = body.name, company_id = current_user.company_id, code = body.code, category = body.category, spec = body.spec, base_unit = body.unit, is_active = body.is_active , )
     db.add(request)
     db.commit()
     db.refresh(request)

@@ -93,7 +93,14 @@ Examples of what Claude writes directly: every subsequent GET/POST/PATCH endpoin
 - When a slice introduces a new concept the user hasn't met, suggest a single line for `learned.md` so the user can capture it.
 - Don't write to `learned.md` directly — that's the user's file.
 
-## 9. Session Close-Out
+## 9. Code Review + Architecture Grilling (added 2026-07-06)
+
+- **Applies especially to AI-heavy code** (frontend, per the speed/learning split) — since it wasn't written solo, it needs a comprehension pass so the user can still defend it in an interview.
+- After any large chunk of Claude-written code lands, do a walkthrough review right after, while context is fresh — not batched up before a demo. Walk through what was built and why, inviting questions.
+- Periodically (before a demo, or when asked), grill the user on the codebase like an interviewer would: ask "why this approach and not X," have them trace what happens end-to-end for a given action, make them find the answer in the actual code/file rather than recalling Claude's explanation from memory.
+- Goal: the user can talk through S.Track's architecture confidently in an interview, not just recite what Claude said once.
+
+## 10. Session Close-Out
 
 At the end of a coding session, Claude updates:
 - `Project-Context.md` → new session entry (what changed, decisions, where to resume).

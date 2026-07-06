@@ -171,9 +171,13 @@ FormData(): used when the body contains a file (raw bytes). Regular inputs go as
 - Open question I still have:
 
 
-### 2026-06-07 — <topic>
+### 2026-06-07 — Wiring to frontends , Created Nav Layout for all pages, Finished dashboard and PO item display
 - What I learned (in my own words):
+  - Frontend this session leaned heavily into AI assisted writing as I think it would be wiser to focus my time on backend and architecture of backend data rather than shallow frontend syntax
+  - Promise.all (typescript) is used before you assign an await to concurrent calls so that they can run alongside each other instead of one after another
+  - Type declaring at top of typescript before the function so that inside the useState you can directly specify the type e.g. useState<PurchaseOrder[]>([])
 - Why it matters / where it applies:
+  - creating explicit type are stricter than using any[] since input type must match the declared at the top
 - Open question I still have:
 
 ### 2026-07-07 — <topic>

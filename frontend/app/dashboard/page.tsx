@@ -1,6 +1,8 @@
 "use client";
 import { supabase } from "@/lib/supabase";
 import { useState, useEffect } from "react";
+import { getToken } from "@/lib/auth";
+
 import Link from "next/link";
 
 type PurchaseOrder = {
@@ -34,10 +36,7 @@ function StatusChip({ status }: { status: string }) {
   );
 }
 
-async function getToken() {
-  const { data: { session } } = await supabase.auth.getSession();
-  return session?.access_token ?? null;
-}
+
 
 export default function DashboardPO() {
   const [purchaseOrders, setPurchaseOrders] = useState<PurchaseOrder[]>([]);

@@ -2,6 +2,7 @@
 import { supabase } from "@/lib/supabase";
 import { useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
+import { getToken } from "@/lib/auth";
 
 type PurchaseOrder = {
   id: number;
@@ -21,6 +22,17 @@ type POItem = {
   location: number;
 };
 
+type Item = {
+  id: number;
+  item_name: string;
+  spec: string | null;
+};
+
+type StorageLocation = {
+  id: number;
+  name: string;
+};
+
 const STATUS_STYLES: Record<string, string> = {
   open: "bg-neutral-700 text-neutral-100",
   partially_received: "bg-amber-900 text-amber-200",
@@ -37,10 +49,6 @@ function StatusChip({ status }: { status: string }) {
   );
 }
 
-async function getToken() {
-  const { data: { session } } = await supabase.auth.getSession();
-  return session?.access_token ?? null;
-}
 
 export default function POdetail() {
   const params = useParams();
@@ -49,20 +57,34 @@ export default function POdetail() {
 
   const [po, setPO] = useState<PurchaseOrder | null>(null);
   const [poItems, setPOItems] = useState<POItem[]>([]);
+  const [items, setItems] = useState<Item[]>([]);
+  const [locations, setLocations] = useState<StorageLocation[]>([]);
 
   async function fetchPO() {
     const token = await getToken();
     if (!token) return;
     const headers = { Authorization: `Bearer ${token}` };
 
-    const [poRes, itemsRes] = await Promise.all([
+    const [poRes, itemsRes, catalogRes, locRes] = await Promise.all([
       fetch("http://localhost:8000/purchase-orders", { headers }),
       fetch(`http://localhost:8000/purchase-orders/${poId}/po-items`, { headers }),
+      fetch("http://localhost:8000/items", { headers }),
+      fetch("http://localhost:8000/storage_location", { headers }),
     ]);
 
     const allPOs: PurchaseOrder[] = await poRes.json();
     setPO(allPOs.find((p) => p.id === Number(poId)) ?? null);
     setPOItems(await itemsRes.json());
+    setItems(await catalogRes.json());
+    setLocations(await locRes.json());
+  }
+
+  function findItem(itemId: number) {
+    return items.find((i) => i.id === itemId);
+  }
+
+  function findLocation(locationId: number) {
+    return locations.find((l) => l.id === locationId);
   }
 
   useEffect(() => {
@@ -112,6 +134,8 @@ export default function POdetail() {
         <table className="w-full text-sm">
           <thead className="bg-neutral-900 text-left text-neutral-400">
             <tr>
+              <th className="px-4 py-2 font-normal">Item</th>
+              <th className="px-4 py-2 font-normal">Spec</th>
               <th className="px-4 py-2 font-normal">Item ID</th>
               <th className="px-4 py-2 font-normal">Ordered Qty</th>
               <th className="px-4 py-2 font-normal">Unit Price</th>
@@ -119,14 +143,20 @@ export default function POdetail() {
             </tr>
           </thead>
           <tbody>
-            {poItems.map((line) => (
-              <tr key={line.id} className="border-t border-neutral-800">
-                <td className="px-4 py-3">{line.item_id}</td>
-                <td className="px-4 py-3">{Number(line.item_qty).toFixed(2)}</td>
-                <td className="px-4 py-3">${Number(line.price).toFixed(2)}</td>
-                <td className="px-4 py-3">{line.location}</td>
-              </tr>
-            ))}
+            {poItems.map((line) => {
+              const item = findItem(line.item_id);
+              const location = findLocation(line.location);
+              return (
+                <tr key={line.id} className="border-t border-neutral-800">
+                  <td className="px-4 py-3">{item?.item_name ?? "—"}</td>
+                  <td className="px-4 py-3 text-neutral-400">{item?.spec ?? "—"}</td>
+                  <td className="px-4 py-3 text-neutral-500">{line.item_id}</td>
+                  <td className="px-4 py-3">{Number(line.item_qty).toFixed(2)}</td>
+                  <td className="px-4 py-3">${Number(line.price).toFixed(2)}</td>
+                  <td className="px-4 py-3">{location?.name ?? line.location}</td>
+                </tr>
+              );
+            })}
           </tbody>
         </table>
       </div>
