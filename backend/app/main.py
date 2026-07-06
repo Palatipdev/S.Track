@@ -140,6 +140,12 @@ def get_order_items(order_id: int ,db:Session = Depends(get_db), current_user: U
     order_request = db.query(OrderItemModel).filter(OrderItemModel.purchase_order_id == order_id).all()
     return order_request
 
+@app.get("/purchase-orders/{order_id}/po-items")
+def get_po_items(order_id: int, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+    if (db.query(PurchaseOrderModel).filter(PurchaseOrderModel.id == order_id, PurchaseOrderModel.company_id == current_user.company_id).first() == None):
+        raise HTTPException(status_code = 403, detail="Not found")
+    return db.query(POItemModel).filter(POItemModel.po_id == order_id).all()
+
 
 @app.post("/deliveries")
 def delivered(body: DeliveryIn, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
