@@ -1,5 +1,6 @@
 "use client";
 import { getToken } from "@/lib/auth";
+import { useSubmitGuard } from "@/lib/useSubmitGuard";
 import { useState, useEffect } from "react";
 
 type Item = {
@@ -15,6 +16,7 @@ type Item = {
 export default function ItemsPage() {
   const [items, setItems] = useState<Item[]>([]);
   const [showAddModal, setShowAddModal] = useState(false);
+  const { isSubmitting, guard } = useSubmitGuard();
 
   const [name, setName] = useState("");
   const [code, setCode] = useState("");
@@ -37,29 +39,31 @@ export default function ItemsPage() {
 
   async function handleAddItem(e: React.FormEvent) {
     e.preventDefault();
-    const token = await getToken();
-    if (!token) return;
+    guard(async () => {
+      const token = await getToken();
+      if (!token) return;
 
-    await fetch("http://localhost:8000/items", {
-      method: "POST",
-      headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-      body: JSON.stringify({
-        name,
-        code: code || null,
-        category,
-        spec: spec || null,
-        unit,
-        is_active: true,
-      }),
+      await fetch("http://localhost:8000/items", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        body: JSON.stringify({
+          name,
+          code: code || null,
+          category,
+          spec: spec || null,
+          unit,
+          is_active: true,
+        }),
+      });
+
+      setShowAddModal(false);
+      setName("");
+      setCode("");
+      setCategory("");
+      setSpec("");
+      setUnit("");
+      fetchItems();
     });
-
-    setShowAddModal(false);
-    setName("");
-    setCode("");
-    setCategory("");
-    setSpec("");
-    setUnit("");
-    fetchItems();
   }
 
   return (
@@ -176,9 +180,10 @@ export default function ItemsPage() {
               </button>
               <button
                 type="submit"
-                className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium hover:bg-blue-500"
+                disabled={isSubmitting}
+                className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium hover:bg-blue-500 disabled:opacity-50"
               >
-                Create
+                {isSubmitting ? "Creating..." : "Create"}
               </button>
             </div>
           </form>

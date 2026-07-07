@@ -2,6 +2,7 @@
 import { supabase } from "@/lib/supabase";
 import { useState, useEffect } from "react";
 import { getToken } from "@/lib/auth";
+import { useSubmitGuard } from "@/lib/useSubmitGuard";
 
 import Link from "next/link";
 
@@ -45,6 +46,7 @@ export default function DashboardPO() {
   const [items, setItems] = useState<Item[]>([]);
   const [locations, setLocations] = useState<StorageLocation[]>([]);
   const [showAddModal, setShowAddModal] = useState(false);
+  const { isSubmitting, guard } = useSubmitGuard();
 
   const [poNumber, setPoNumber] = useState("");
   const [supplierId, setSupplierId] = useState("");
@@ -93,33 +95,35 @@ export default function DashboardPO() {
 
   async function handleAddPO(e: React.FormEvent) {
     e.preventDefault();
-    const token = await getToken();
-    if (!token) return;
+    guard(async () => {
+      const token = await getToken();
+      if (!token) return;
 
-    await fetch("http://localhost:8000/purchase-orders", {
-      method: "POST",
-      headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-      body: JSON.stringify({
-        po_number: poNumber,
-        supplier_id: Number(supplierId),
-        project_id: projectId ? Number(projectId) : null,
-        expected_delivery: expectedDelivery,
-        po_items: lines.map((l) => ({
-          item_id: Number(l.item_id),
-          item_qty: Number(l.item_qty),
-          item_price: Number(l.item_price),
-          location_id: Number(l.location_id),
-        })),
-      }),
+      await fetch("http://localhost:8000/purchase-orders", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        body: JSON.stringify({
+          po_number: poNumber,
+          supplier_id: Number(supplierId),
+          project_id: projectId ? Number(projectId) : null,
+          expected_delivery: expectedDelivery,
+          po_items: lines.map((l) => ({
+            item_id: Number(l.item_id),
+            item_qty: Number(l.item_qty),
+            item_price: Number(l.item_price),
+            location_id: Number(l.location_id),
+          })),
+        }),
+      });
+
+      setShowAddModal(false);
+      setPoNumber("");
+      setSupplierId("");
+      setProjectId("");
+      setExpectedDelivery("");
+      setLines([{ item_id: "", item_qty: "", item_price: "", location_id: "" }]);
+      fetchAll();
     });
-
-    setShowAddModal(false);
-    setPoNumber("");
-    setSupplierId("");
-    setProjectId("");
-    setExpectedDelivery("");
-    setLines([{ item_id: "", item_qty: "", item_price: "", location_id: "" }]);
-    fetchAll();
   }
 
   function renderGroup(title: string, orders: PurchaseOrder[]) {
@@ -312,9 +316,10 @@ export default function DashboardPO() {
               </button>
               <button
                 type="submit"
-                className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium hover:bg-blue-500"
+                disabled={isSubmitting}
+                className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium hover:bg-blue-500 disabled:opacity-50"
               >
-                Create
+                {isSubmitting ? "Creating..." : "Create"}
               </button>
             </div>
           </form>

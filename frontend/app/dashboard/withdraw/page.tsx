@@ -1,5 +1,6 @@
 "use client";
 import { getToken } from "@/lib/auth";
+import { useSubmitGuard } from "@/lib/useSubmitGuard";
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 
@@ -21,6 +22,7 @@ export default function WithdrawPage() {
   const [locationId, setLocationId] = useState("");
   const [projectId, setProjectId] = useState("");
   const [lines, setLines] = useState<LineDraft[]>([{ item_id: "", quantity: "" }]);
+  const { isSubmitting, guard } = useSubmitGuard();
 
   async function fetchLocationsAndProjects() {
     const token = await getToken();
@@ -80,23 +82,25 @@ export default function WithdrawPage() {
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    const token = await getToken();
-    if (!token) return;
+    guard(async () => {
+      const token = await getToken();
+      if (!token) return;
 
-    await fetch("http://localhost:8000/withdrawal", {
-      method: "POST",
-      headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-      body: JSON.stringify({
-        project_id: Number(projectId),
-        location_id: Number(locationId),
-        withdrawalLines: lines.map((l) => ({
-          item_id: Number(l.item_id),
-          quantity: Number(l.quantity),
-        })),
-      }),
+      await fetch("http://localhost:8000/withdrawal", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        body: JSON.stringify({
+          project_id: Number(projectId),
+          location_id: Number(locationId),
+          withdrawalLines: lines.map((l) => ({
+            item_id: Number(l.item_id),
+            quantity: Number(l.quantity),
+          })),
+        }),
+      });
+
+      router.push("/dashboard/stock");
     });
-
-    router.push("/dashboard/stock");
   }
 
   return (
@@ -195,9 +199,10 @@ export default function WithdrawPage() {
 
         <button
           type="submit"
-          className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium hover:bg-blue-500"
+          disabled={isSubmitting}
+          className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium hover:bg-blue-500 disabled:opacity-50"
         >
-          Submit Withdrawal
+          {isSubmitting ? "Submitting..." : "Submit Withdrawal"}
         </button>
       </form>
     </div>

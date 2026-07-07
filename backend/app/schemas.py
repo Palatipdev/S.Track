@@ -60,7 +60,7 @@ class ItemIn(BaseModel):
     name: str
     code: Optional[str] = None
     category: str
-    spec: str
+    spec: Optional[str] = None
     unit: str
     is_active: bool
 

@@ -269,7 +269,7 @@ class Items(Base):
     company_id = mapped_column (BigInteger, ForeignKey("companies.id"), nullable = False)
     code = mapped_column(Text, nullable = True)
     category = mapped_column(Text, nullable = False)
-    spec = mapped_column(Text, nullable = False)
+    spec = mapped_column(Text, nullable = True)
     base_unit = mapped_column(Text, nullable = False)
     is_active = mapped_column(Boolean, nullable = False)
     deleted_at = mapped_column(DateTime(timezone= True), nullable = True)

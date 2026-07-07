@@ -1,5 +1,6 @@
 "use client";
 import { getToken } from "@/lib/auth";
+import { useSubmitGuard } from "@/lib/useSubmitGuard";
 import { useState, useEffect } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 
@@ -42,6 +43,7 @@ export default function ReceivePage() {
   const [locationId, setLocationId] = useState("");
   const [note, setNote] = useState("");
   const [lines, setLines] = useState<LineDraft[]>([]);
+  const { isSubmitting, guard } = useSubmitGuard();
 
   async function fetchData() {
     const token = await getToken();
@@ -92,29 +94,31 @@ export default function ReceivePage() {
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    const token = await getToken();
-    if (!token || !po) return;
+    guard(async () => {
+      const token = await getToken();
+      if (!token || !po) return;
 
-    await fetch("http://localhost:8000/receipt", {
-      method: "POST",
-      headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-      body: JSON.stringify({
-        po_id: po.id,
-        location_id: Number(locationId),
-        note: note || null,
-        po_lines: lines.map((l) => ({
-          po_item_id: l.po_item_id,
-          received_qty: Number(l.received_qty),
-          accepted_qty: Number(l.accepted_qty),
-          rejected_qty: Number(l.rejected_qty),
-          condition: l.condition,
-          condition_note: l.condition_note || null,
-          return_to_supplier: l.return_to_supplier,
-        })),
-      }),
+      await fetch("http://localhost:8000/receipt", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        body: JSON.stringify({
+          po_id: po.id,
+          location_id: Number(locationId),
+          note: note || null,
+          po_lines: lines.map((l) => ({
+            po_item_id: l.po_item_id,
+            received_qty: Number(l.received_qty),
+            accepted_qty: Number(l.accepted_qty),
+            rejected_qty: Number(l.rejected_qty),
+            condition: l.condition,
+            condition_note: l.condition_note || null,
+            return_to_supplier: l.return_to_supplier,
+          })),
+        }),
+      });
+
+      router.push(`/dashboard/po/${po.id}`);
     });
-
-    router.push(`/dashboard/po/${po.id}`);
   }
 
   if (!poId) {
@@ -235,9 +239,10 @@ export default function ReceivePage() {
 
         <button
           type="submit"
-          className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium hover:bg-blue-500"
+          disabled={isSubmitting}
+          className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium hover:bg-blue-500 disabled:opacity-50"
         >
-          Submit Receipt
+          {isSubmitting ? "Submitting..." : "Submit Receipt"}
         </button>
       </form>
     </div>

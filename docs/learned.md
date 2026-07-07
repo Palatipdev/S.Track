@@ -180,9 +180,17 @@ FormData(): used when the body contains a file (raw bytes). Regular inputs go as
   - creating explicit type are stricter than using any[] since input type must match the declared at the top
 - Open question I still have:
 
-### 2026-07-07 — <topic>
+### 2026-07-07 — Frontend wiring (Receive, Stock, Withdraw, Items), Voice to text claude
 - What I learned (in my own words):
+  - discovered that the concept of frontend for CRUD app such as this is
+  similarly the same for all frontend pages. recurring methodlogy fetch database -> input form and storing as states -> create an object and json.stringify via endpoint . as wellas the syntaxes of map and react componenent
+  - Voice to text claude 
+  - double firing problem inside frontend UI , implmented
+  helper function called isSubmitting by awaiting current submission until return
 - Why it matters / where it applies:
+- Starting to recognise patterns to frontend CRUD syntaxes, compounds
+- Voice to text claude allow me to elaborate idea throgugh speaking
+which reduces friction compared to typing
 - Open question I still have:
 
 ### 2026-08-07 — <topic>

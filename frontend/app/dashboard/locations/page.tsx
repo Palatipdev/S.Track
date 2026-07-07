@@ -1,5 +1,6 @@
 "use client";
 import { getToken } from "@/lib/auth";
+import { useSubmitGuard } from "@/lib/useSubmitGuard";
 import { useState, useEffect } from "react";
 
 type StorageLocation = {
@@ -18,6 +19,7 @@ export default function LocationsPage() {
   const [locations, setLocations] = useState<StorageLocation[]>([]);
   const [projects, setProjects] = useState<Project[]>([]);
   const [showAddModal, setShowAddModal] = useState(false);
+  const { isSubmitting, guard } = useSubmitGuard();
 
   const [name, setName] = useState("");
   const [type, setType] = useState("");
@@ -50,27 +52,29 @@ export default function LocationsPage() {
 
   async function handleAddLocation(e: React.FormEvent) {
     e.preventDefault();
-    const token = await getToken();
-    if (!token) return;
+    guard(async () => {
+      const token = await getToken();
+      if (!token) return;
 
-    await fetch("http://localhost:8000/storage_location", {
-      method: "POST",
-      headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-      body: JSON.stringify({
-        parent_storage: parentStorage ? Number(parentStorage) : null,
-        project_id: type === "project_site" && projectId ? Number(projectId) : null,
-        name,
-        type,
-        location_member: [],
-      }),
+      await fetch("http://localhost:8000/storage_location", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        body: JSON.stringify({
+          parent_storage: parentStorage ? Number(parentStorage) : null,
+          project_id: type === "project_site" && projectId ? Number(projectId) : null,
+          name,
+          type,
+          location_member: [],
+        }),
+      });
+
+      setShowAddModal(false);
+      setName("");
+      setType("");
+      setParentStorage("");
+      setProjectId("");
+      fetchData();
     });
-
-    setShowAddModal(false);
-    setName("");
-    setType("");
-    setParentStorage("");
-    setProjectId("");
-    fetchData();
   }
 
   function findLocation(id: number | null) {
@@ -201,9 +205,10 @@ export default function LocationsPage() {
               </button>
               <button
                 type="submit"
-                className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium hover:bg-blue-500"
+                disabled={isSubmitting}
+                className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium hover:bg-blue-500 disabled:opacity-50"
               >
-                Create
+                {isSubmitting ? "Creating..." : "Create"}
               </button>
             </div>
           </form>
