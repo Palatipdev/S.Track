@@ -93,9 +93,39 @@ Backend runs from `backend/` (venv): `uvicorn app.main:app --reload`.
 - [x] Fixed single-option dropdown bug (missing placeholder `<option>` meant `onChange` never fired).
 - [x] Dashboard styled with Tailwind — header, toolbar, sectioned cards, modal overlays.
 
-### Backlog
+### Backlog (v1, retired by pivot)
 - [ ] Procurement dashboard budget overview (spent vs budgeted per project).
 - [ ] Budget auto-deduct on purchase-order logging (spec Feature #4).
 - [ ] Style the login page with Tailwind.
 - [ ] Create-user endpoint (replace hand-inserted test users).
 - [ ] Add Row-Level Security (RLS) policy stubs scoped by `company_id`.
+
+---
+
+## v2 Pivot — Phase A: CORE DONE (2026-07-06)
+
+Real requirements from the company manager. See `docs/Project-Spec-v2.md` for the full spec.
+
+### Backend — done
+- [x] v2 SQLAlchemy models: `storage_locations`, `location_members`, `items`, `po_items`, `receipts`, `receipt_lines`, `receipt_photos`, `stock_movements`, `stock_levels`, `withdrawals`, `withdrawal_lines`.
+- [x] `purchase_orders` reworked for ingest (dropped `material_request_id`, added `po_number`, `project_id`); `OrderStatus` enum migrated to `open`/`partially_received`/`received`/`closed`/`cancelled`.
+- [x] Locations + Items CRUD (`POST`/`GET /storage_location`, `POST`/`GET /items`).
+- [x] `POST`/`GET /purchase-orders`, `GET /purchase-orders/{id}/po-items`.
+- [x] `POST /receipt` — creates receipt + lines, inserts `stock_movements`, upserts `stock_levels`, derives PO `open`/`partially_received`/`received` status from ordered-vs-accepted across all po_items.
+- [x] `POST /receipt/{id}/photos` — server-side sha256, same pattern as v1 delivery photos.
+- [x] `POST`/`GET /withdrawal`, `GET /stock_level/{location_id}` (company-scoped).
+
+### Frontend — done
+- [x] `dashboard/layout.tsx` — sidebar nav (desktop) + bottom tabs (mobile), shared across all v2 pages.
+- [x] `/dashboard` — PO list grouped by status, stat tiles, Add Purchase Order modal.
+- [x] `/dashboard/po/[id]` — PO detail with item name/spec/location joins, links to receive flow.
+- [x] `/dashboard/receive` — FM-003 receipt form (per-line received/accepted/rejected/condition).
+- [x] `/dashboard/stock` — location picker + stock table, search-by-name, negative-qty flagged red.
+- [x] `/dashboard/withdraw` — FM-004 withdrawal form, location→stock-scoped item picker, over-stock warning.
+- [x] `/dashboard/items`, `/dashboard/locations` — catalog/hierarchy admin pages (type-filtered parent picker, project link only for `project_site`).
+
+### Backlog (Phase A follow-ups)
+- [ ] Receipt photo upload not wired into the receive form yet (needs `receipt.id` from POST response first).
+- [ ] `GET /receipt/{id}` and `GET /withdrawal/{id}` detail views (optional, not blocking).
+- [ ] `location_members` assignment — deferred to a future self-service "join your location" flow, not an admin picker.
+- [ ] Visual pass — current UI is functional but templated; reference designs pending.

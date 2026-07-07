@@ -46,13 +46,15 @@
 
 **PIVOT (2026-07-03): real requirements from the family company's manager. Read `Project-Spec-v2.md` first.** v1 request→approval→PO flow is demoted; new core is PO ingest → goods receipt w/ condition checklist → multi-location stock → withdrawal (เบิก) tracking.
 
+**Phase A: CORE DONE (2026-07-06).** Backend and frontend both wired end-to-end. See README.md "v2 Pivot — Phase A" section for the full done-list.
+
 - [ ] Get the manager's ER diagram; diff against `Project-Spec-v2.md` entities; record decisions in its Decision Log.
-- [ ] Ask the manager the 19 questions listed at the bottom of `Project-Spec-v2.md` (start with #1, #8, #19).
-- [ ] Phase A build: locations + items → PO ingest → receipts + checklist → stock movements/levels → withdrawals → stock dashboard.
+- [ ] Unit-consistency question still unanswered by manager (blocks whether `items.base_unit` needs to move to per-transaction).
+- [ ] Wire receipt photo upload into the receive form (needs `receipt.id` from POST response before calling the photo endpoint).
+- [ ] `location_members` assignment UI — deferred to a self-service flow, not built this phase.
+- [ ] Visual/design pass on frontend — currently functional but templated-looking; user is gathering reference designs.
 - [ ] Create-user endpoint (test users still inserted by hand).
 - [ ] RLS policy stubs scoped by `company_id`.
-- [ ] Style the login page with Tailwind (dashboard done).
-- [ ] Delivery-photo upload feedback: add `uploadStatus` state ("idle" | "uploading" | "done"), show a loading state during the POST and a checkmark on success instead of the button staying as "Confirm Photos".
 - Retired by pivot: budget auto-deduct, requested-vs-ordered budget overview (budget lives in the ERP).
 
 ---
