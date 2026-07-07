@@ -1,6 +1,7 @@
 "use client";
 import { getToken } from "@/lib/auth";
 import { useSubmitGuard } from "@/lib/useSubmitGuard";
+import { fetchJson } from "@/lib/fetchJson";
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 
@@ -29,15 +30,15 @@ export default function WithdrawPage() {
     if (!token) return;
     const headers = { Authorization: `Bearer ${token}` };
 
-    const [locRes, projRes, itemsRes] = await Promise.all([
-      fetch("http://localhost:8000/storage_location", { headers }),
-      fetch("http://localhost:8000/projects", { headers }),
-      fetch("http://localhost:8000/items", { headers }),
+    const [fetchedLocations, fetchedProjects, fetchedItems] = await Promise.all([
+      fetchJson<StorageLocation[]>("http://localhost:8000/storage_location", { headers }),
+      fetchJson<Project[]>("http://localhost:8000/projects", { headers }),
+      fetchJson<Item[]>("http://localhost:8000/items", { headers }),
     ]);
 
-    setLocations(await locRes.json());
-    setProjects(await projRes.json());
-    setItems(await itemsRes.json());
+    setLocations(fetchedLocations);
+    setProjects(fetchedProjects);
+    setItems(fetchedItems);
   }
 
   async function fetchStockLevels() {
@@ -49,8 +50,7 @@ export default function WithdrawPage() {
     if (!token) return;
     const headers = { Authorization: `Bearer ${token}` };
 
-    const res = await fetch(`http://localhost:8000/stock_level/${locationId}`, { headers });
-    setStockLevels(await res.json());
+    setStockLevels(await fetchJson<StockLevel[]>(`http://localhost:8000/stock_level/${locationId}`, { headers }));
   }
 
   useEffect(() => {

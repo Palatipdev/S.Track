@@ -1,6 +1,7 @@
 "use client";
 import { getToken } from "@/lib/auth";
 import { useSubmitGuard } from "@/lib/useSubmitGuard";
+import { fetchJson } from "@/lib/fetchJson";
 import { useState, useEffect } from "react";
 
 type Item = {
@@ -27,10 +28,9 @@ export default function ItemsPage() {
   async function fetchItems() {
     const token = await getToken();
     if (!token) return;
-    const res = await fetch("http://localhost:8000/items", {
+    setItems(await fetchJson<Item[]>("http://localhost:8000/items", {
       headers: { Authorization: `Bearer ${token}` },
-    });
-    setItems(await res.json());
+    }));
   }
 
   useEffect(() => {

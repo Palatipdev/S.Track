@@ -1,12 +1,15 @@
 "use client";
 import { getToken } from "@/lib/auth";
 import { useSubmitGuard } from "@/lib/useSubmitGuard";
+import { fetchJson } from "@/lib/fetchJson";
 import { useState, useEffect } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 
 type PurchaseOrder = {
   id: number;
   po_number: string;
+  supplier_id: number;
+  project_id: number | null;
 };
 
 type POItem = {
@@ -18,6 +21,8 @@ type POItem = {
 
 type Item = { id: number; item_name: string; spec: string | null };
 type StorageLocation = { id: number; name: string };
+type Project = { id: number; name: string };
+type Supplier = { id: number; name: string };
 
 type LineDraft = {
   po_item_id: number;
@@ -44,23 +49,25 @@ export default function ReceivePage() {
   const [note, setNote] = useState("");
   const [lines, setLines] = useState<LineDraft[]>([]);
   const { isSubmitting, guard } = useSubmitGuard();
+  const [projects, setProjects] = useState<Project[]>([])
+  const [suppliers, setSuppliers] = useState<Supplier[]>([])
 
   async function fetchData() {
     const token = await getToken();
     if (!token || !poId) return;
     const headers = { Authorization: `Bearer ${token}` };
 
-    const [poRes, poItemsRes, itemsRes, locRes] = await Promise.all([
-      fetch("http://localhost:8000/purchase-orders", { headers }),
-      fetch(`http://localhost:8000/purchase-orders/${poId}/po-items`, { headers }),
-      fetch("http://localhost:8000/items", { headers }),
-      fetch("http://localhost:8000/storage_location", { headers }),
+    const [allPOs, fetchedPOItems, fetchedItems, fetchedLocations, fetchedProjects, fetchedSuppliers] = await Promise.all([
+      fetchJson<PurchaseOrder[]>("http://localhost:8000/purchase-orders", { headers }),
+      fetchJson<POItem[]>(`http://localhost:8000/purchase-orders/${poId}/po-items`, { headers }),
+      fetchJson<Item[]>("http://localhost:8000/items", { headers }),
+      fetchJson<StorageLocation[]>("http://localhost:8000/storage_location", { headers }),
+      fetchJson<Project[]>("http://localhost:8000/projects", { headers }),
+      fetchJson<Supplier[]>("http://localhost:8000/suppliers", { headers }),
     ]);
 
-    const allPOs: PurchaseOrder[] = await poRes.json();
     setPO(allPOs.find((p) => p.id === Number(poId)) ?? null);
 
-    const fetchedPOItems: POItem[] = await poItemsRes.json();
     setPOItems(fetchedPOItems);
     setLines(
       fetchedPOItems.map((line) => ({
@@ -74,8 +81,10 @@ export default function ReceivePage() {
       }))
     );
 
-    setItems(await itemsRes.json());
-    setLocations(await locRes.json());
+    setItems(fetchedItems);
+    setLocations(fetchedLocations);
+    setProjects(fetchedProjects);
+    setSuppliers(fetchedSuppliers);
   }
 
   useEffect(() => {
@@ -84,6 +93,13 @@ export default function ReceivePage() {
 
   function findItem(itemId: number) {
     return items.find((i) => i.id === itemId);
+  }
+  function findProject(projectId: number | null) {
+    if (projectId === null) return "—";
+    return projects.find((p) => p.id === projectId)?.name ?? "—";
+  }
+  function findSupplier(supplierId: number) {
+    return suppliers.find((s) => s.id === supplierId)?.name ?? "—";
   }
 
   function updateLine(index: number, field: keyof LineDraft, value: string | boolean) {
@@ -132,7 +148,9 @@ export default function ReceivePage() {
   return (
     <div>
       <h1 className="mb-1 text-xl font-semibold">Receive — {po.po_number}</h1>
-      <p className="mb-6 text-sm text-neutral-500">FM-003 ใบรับวัสดุ</p>
+      <p className="mb-6 text-sm text-neutral-500">
+        FM-003 ใบรับวัสดุ · {findSupplier(po.supplier_id)} · {findProject(po.project_id)}
+      </p>
 
       <form onSubmit={handleSubmit}>
         <div className="mb-6">

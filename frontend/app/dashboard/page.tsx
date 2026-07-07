@@ -3,6 +3,7 @@ import { supabase } from "@/lib/supabase";
 import { useState, useEffect } from "react";
 import { getToken } from "@/lib/auth";
 import { useSubmitGuard } from "@/lib/useSubmitGuard";
+import { fetchJson } from "@/lib/fetchJson";
 
 import Link from "next/link";
 
@@ -59,19 +60,19 @@ export default function DashboardPO() {
     if (!token) return;
     const headers = { Authorization: `Bearer ${token}` };
 
-    const [poRes, supRes, projRes, itemRes, locRes] = await Promise.all([
-      fetch("http://localhost:8000/purchase-orders", { headers }),
-      fetch("http://localhost:8000/suppliers", { headers }),
-      fetch("http://localhost:8000/projects", { headers }),
-      fetch("http://localhost:8000/items", { headers }),
-      fetch("http://localhost:8000/storage_location", { headers }),
+    const [fetchedPOs, fetchedSuppliers, fetchedProjects, fetchedItems, fetchedLocations] = await Promise.all([
+      fetchJson<PurchaseOrder[]>("http://localhost:8000/purchase-orders", { headers }),
+      fetchJson<Supplier[]>("http://localhost:8000/suppliers", { headers }),
+      fetchJson<Project[]>("http://localhost:8000/projects", { headers }),
+      fetchJson<Item[]>("http://localhost:8000/items", { headers }),
+      fetchJson<StorageLocation[]>("http://localhost:8000/storage_location", { headers }),
     ]);
 
-    setPurchaseOrders(await poRes.json());
-    setSuppliers(await supRes.json());
-    setProjects(await projRes.json());
-    setItems(await itemRes.json());
-    setLocations(await locRes.json());
+    setPurchaseOrders(fetchedPOs);
+    setSuppliers(fetchedSuppliers);
+    setProjects(fetchedProjects);
+    setItems(fetchedItems);
+    setLocations(fetchedLocations);
   }
 
   useEffect(() => {
@@ -126,6 +127,15 @@ export default function DashboardPO() {
     });
   }
 
+  function findSupplier(id: number) {
+    return suppliers.find((s) => s.id === id)?.name ?? "—";
+  }
+
+  function findProject(id: number | null) {
+    if (id === null) return "—";
+    return projects.find((p) => p.id === id)?.name ?? "—";
+  }
+
   function renderGroup(title: string, orders: PurchaseOrder[]) {
     if (orders.length === 0) return null;
     return (
@@ -136,6 +146,8 @@ export default function DashboardPO() {
             <thead className="bg-neutral-900 text-left text-neutral-400">
               <tr>
                 <th className="px-4 py-2 font-normal">PO Number</th>
+                <th className="px-4 py-2 font-normal">Supplier</th>
+                <th className="px-4 py-2 font-normal">Project</th>
                 <th className="px-4 py-2 font-normal">Expected Delivery</th>
                 <th className="px-4 py-2 font-normal">Total</th>
                 <th className="px-4 py-2 font-normal">Status</th>
@@ -149,6 +161,8 @@ export default function DashboardPO() {
                       {po.po_number}
                     </Link>
                   </td>
+                  <td className="px-4 py-3 text-neutral-400">{findSupplier(po.supplier_id)}</td>
+                  <td className="px-4 py-3 text-neutral-400">{findProject(po.project_id)}</td>
                   <td className="px-4 py-3 text-neutral-400">{po.expected_delivery}</td>
                   <td className="px-4 py-3 text-neutral-400">${Number(po.total_cost).toFixed(2)}</td>
                   <td className="px-4 py-3">

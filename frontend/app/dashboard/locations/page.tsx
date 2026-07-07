@@ -1,6 +1,7 @@
 "use client";
 import { getToken } from "@/lib/auth";
 import { useSubmitGuard } from "@/lib/useSubmitGuard";
+import { fetchJson } from "@/lib/fetchJson";
 import { useState, useEffect } from "react";
 
 type StorageLocation = {
@@ -31,13 +32,13 @@ export default function LocationsPage() {
     if (!token) return;
     const headers = { Authorization: `Bearer ${token}` };
 
-    const [locRes, projRes] = await Promise.all([
-      fetch("http://localhost:8000/storage_location", { headers }),
-      fetch("http://localhost:8000/projects", { headers }),
+    const [fetchedLocations, fetchedProjects] = await Promise.all([
+      fetchJson<StorageLocation[]>("http://localhost:8000/storage_location", { headers }),
+      fetchJson<Project[]>("http://localhost:8000/projects", { headers }),
     ]);
 
-    setLocations(await locRes.json());
-    setProjects(await projRes.json());
+    setLocations(fetchedLocations);
+    setProjects(fetchedProjects);
   }
 
   useEffect(() => {

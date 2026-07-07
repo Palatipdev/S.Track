@@ -46,16 +46,45 @@
 
 **PIVOT (2026-07-03): real requirements from the family company's manager. Read `Project-Spec-v2.md` first.** v1 request→approval→PO flow is demoted; new core is PO ingest → goods receipt w/ condition checklist → multi-location stock → withdrawal (เบิก) tracking.
 
-**Phase A: CORE DONE (2026-07-06).** Backend and frontend both wired end-to-end. See README.md "v2 Pivot — Phase A" section for the full done-list.
+**Phase A: CORE DONE (2026-07-06/07).** Backend and frontend both wired end-to-end across all 8 v2 pages (dashboard/PO list, PO detail, receive, stock, withdraw, items, locations, shared layout shell). See README.md "v2 Pivot — Phase A" section for the full done-list.
+
+**Demo with the aunt/manager is in 2 days from 2026-07-07 (i.e. ~2026-07-09).** User is ahead of schedule. Plan for the remaining time, decided with the user this session:
+
+1. **Today/next (2026-07-07, in progress)**: finish end-to-end test pass with real Thai test data (see "Test Data Walkthrough" below), fix bugs as found.
+2. **Architecture grilling day (not yet done — do this next)**: per `docs/claude-rule.md` Rule 9 (added this session), dedicate a full session to grilling the user on the codebase like an interviewer — data model why's, request-flow tracing (PO ingest → receive → stock update → withdraw), enum/stock_movements/stock_levels reasoning — pulling answers from actual code, not memory. User explicitly asked for this before the demo so they can defend the project confidently in interviews and to the aunt.
+3. **Frontend visual/design pass**: user says current UI is functional but "templated/AI-like." User is gathering reference designs (sent some dashboard inspiration images this session — sidebar SaaS dashboards, stat-tile rows, financial dashboards) to redo styling. Do this AFTER the grilling session, with a full day of runway before the demo, not instead of it.
+4. **After grilling + redesign**: user wants to post on LinkedIn about Phase A completion + the upcoming manager meeting, to keep recruiter visibility up during internship applications.
 
 - [ ] Get the manager's ER diagram; diff against `Project-Spec-v2.md` entities; record decisions in its Decision Log.
 - [ ] Unit-consistency question still unanswered by manager (blocks whether `items.base_unit` needs to move to per-transaction).
 - [ ] Wire receipt photo upload into the receive form (needs `receipt.id` from POST response before calling the photo endpoint).
-- [ ] `location_members` assignment UI — deferred to a self-service flow, not built this phase.
-- [ ] Visual/design pass on frontend — currently functional but templated-looking; user is gathering reference designs.
+- [ ] `location_members` assignment UI — deferred to a self-service "join your location" flow (worker/unit-leader picks their own location), not an admin picker. Reasoning: some unit leaders are low-tech / may not have app access yet; forcing admin-side assignment now creates friction for no benefit before the core flow is proven.
+- [ ] Visual/design pass on frontend — see plan above.
 - [ ] Create-user endpoint (test users still inserted by hand).
 - [ ] RLS policy stubs scoped by `company_id`.
 - Retired by pivot: budget auto-deduct, requested-vs-ordered budget overview (budget lives in the ERP).
+
+## Test Data Walkthrough (in progress 2026-07-07)
+
+Real test pass using Thai test data end-to-end, in this order (later steps depend on earlier ones existing):
+
+1. **`/dashboard/locations`**: Central (`สโตร์กลาง`, type `central`, no parent) → Unit (`หน่วยกรุงเทพ`, type `unit`, parent = central) → Project site (`โครงการ BR69011`, type `project_site`, parent = unit, project = a seeded `Project` row, e.g. "Sala Bodhgaya" id 2 already exists in DB).
+2. **`/dashboard/items`**: ไม้สัก 150cm (category ก่อสร้าง, spec `2 1/2" x 7" x 150cm`, unit ตัว), ปูนซีเมนต์ (category ก่อสร้าง, spec blank/null, unit ถุง).
+3. **`/dashboard` Add PO**: PO Number `SC10-6907-0008`, supplier (seed via Swagger if needed, e.g. ไทยวัสดุก่อสร้าง), project = โครงการ BR69011, 2 lines at หน่วยกรุงเทพ (ไม้สัก qty 8 price 450, ปูนซีเมนต์ qty 20 price 150).
+4. **Receive against the PO**: ไม้สัก received 8 / accepted 7 / rejected 1 / condition damaged / return_to_supplier checked; ปูนซีเมนต์ received 20 / accepted 20 / rejected 0 / good. Expected PO status after: `partially_received` (one line short of full accepted qty).
+5. **`/dashboard/stock`**: select หน่วยกรุงเทพ, expect ไม้สัก qty 7, ปูนซีเมนต์ qty 20.
+6. **`/dashboard/withdraw`**: withdraw 5 ปูนซีเมนต์ from หน่วยกรุงเทพ against โครงการ BR69011 → stock should drop to 15. Also test over-withdrawing (e.g. qty 999) — should show amber warning but still allow submit (deliberate no-block design decision).
+
+**Bugs found and fixed during this pass** (all committed):
+- `Items.company_id` FK, `Items.is_active` Boolean, `POItem.id`/`item_id` type fixes — earlier session.
+- `PurchaseOrderIn` had stale `material_request_id`/`status` fields — removed.
+- `OrderStatus` enum reverted to old `pending/delivered/cancelled` values via an apparent editor/undo glitch — re-fixed to `open/partially_received/received/closed/cancelled` (model + migration `da22d5d6d67c`), confirmed correct in Supabase.
+- `DeliveryPhoto.id` had a `mappped_column` typo (extra `p`) — fixed.
+- `main.py /items` POST used `unit=` instead of the model's actual field name `base_unit=` — fixed (root cause of a 500 on item creation).
+- Added `po_number` column to `purchase_orders` (model + schema + endpoint + migration `481c2a16e72d`).
+- `ItemIn.spec` was `str` (required) but cement legitimately has no spec — changed to `Optional[str] = None` in schema AND `nullable=True` in the `Items.spec` model column (migration `c4db68a2c257`) — both layers needed to agree, schema-only fix wasn't enough (DB NOT NULL constraint still rejected it).
+- Double-POST-firing bug: clicking "Add"/submit buttons twice fired two requests. Fixed with a new shared hook `frontend/lib/useSubmitGuard.ts` (`{ isSubmitting, guard }`) wired into all 5 POST forms (Add PO, Add Item, Add Location, Receive, Withdraw) — button disables + shows "..." label while a request is in flight.
+- Still open at time of writing: `locations.map is not a function` crash on `/dashboard/stock` — `setLocations(await locRes.json())` sets whatever the response body is without checking `res.ok`; if `/storage_location` errors, an object (not array) lands in state. Not yet root-caused — check the Network tab response for that specific request when resuming.
 
 ---
 

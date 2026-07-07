@@ -1,5 +1,6 @@
 "use client";
 import { getToken } from "@/lib/auth";
+import { fetchJson } from "@/lib/fetchJson";
 import { useState, useEffect } from "react";
 
 type StorageLocation = { id: number; name: string };
@@ -18,13 +19,13 @@ export default function StockPage() {
     if (!token) return;
     const headers = { Authorization: `Bearer ${token}` };
 
-    const [locRes, itemsRes] = await Promise.all([
-      fetch("http://localhost:8000/storage_location", { headers }),
-      fetch("http://localhost:8000/items", { headers }),
+    const [fetchedLocations, fetchedItems] = await Promise.all([
+      fetchJson<StorageLocation[]>("http://localhost:8000/storage_location", { headers }),
+      fetchJson<Item[]>("http://localhost:8000/items", { headers }),
     ]);
 
-    setLocations(await locRes.json());
-    setItems(await itemsRes.json());
+    setLocations(fetchedLocations);
+    setItems(fetchedItems);
   }
 
   async function fetchStockLevels() {
@@ -36,8 +37,7 @@ export default function StockPage() {
     if (!token) return;
     const headers = { Authorization: `Bearer ${token}` };
 
-    const res = await fetch(`http://localhost:8000/stock_level/${locationId}`, { headers });
-    setStockLevels(await res.json());
+    setStockLevels(await fetchJson<StockLevel[]>(`http://localhost:8000/stock_level/${locationId}`, { headers }));
   }
 
   useEffect(() => {

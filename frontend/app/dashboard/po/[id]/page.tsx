@@ -3,6 +3,7 @@ import { supabase } from "@/lib/supabase";
 import { useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { getToken } from "@/lib/auth";
+import { fetchJson } from "@/lib/fetchJson";
 
 type PurchaseOrder = {
   id: number;
@@ -33,6 +34,9 @@ type StorageLocation = {
   name: string;
 };
 
+type Supplier = { id: number; name: string };
+type Project = { id: number; name: string };
+
 const STATUS_STYLES: Record<string, string> = {
   open: "bg-neutral-700 text-neutral-100",
   partially_received: "bg-amber-900 text-amber-200",
@@ -59,24 +63,29 @@ export default function POdetail() {
   const [poItems, setPOItems] = useState<POItem[]>([]);
   const [items, setItems] = useState<Item[]>([]);
   const [locations, setLocations] = useState<StorageLocation[]>([]);
+  const [suppliers, setSuppliers] = useState<Supplier[]>([]);
+  const [projects, setProjects] = useState<Project[]>([]);
 
   async function fetchPO() {
     const token = await getToken();
     if (!token) return;
     const headers = { Authorization: `Bearer ${token}` };
 
-    const [poRes, itemsRes, catalogRes, locRes] = await Promise.all([
-      fetch("http://localhost:8000/purchase-orders", { headers }),
-      fetch(`http://localhost:8000/purchase-orders/${poId}/po-items`, { headers }),
-      fetch("http://localhost:8000/items", { headers }),
-      fetch("http://localhost:8000/storage_location", { headers }),
+    const [allPOs, fetchedPOItems, catalog, fetchedLocations, fetchedSuppliers, fetchedProjects] = await Promise.all([
+      fetchJson<PurchaseOrder[]>("http://localhost:8000/purchase-orders", { headers }),
+      fetchJson<POItem[]>(`http://localhost:8000/purchase-orders/${poId}/po-items`, { headers }),
+      fetchJson<Item[]>("http://localhost:8000/items", { headers }),
+      fetchJson<StorageLocation[]>("http://localhost:8000/storage_location", { headers }),
+      fetchJson<Supplier[]>("http://localhost:8000/suppliers", { headers }),
+      fetchJson<Project[]>("http://localhost:8000/projects", { headers }),
     ]);
 
-    const allPOs: PurchaseOrder[] = await poRes.json();
     setPO(allPOs.find((p) => p.id === Number(poId)) ?? null);
-    setPOItems(await itemsRes.json());
-    setItems(await catalogRes.json());
-    setLocations(await locRes.json());
+    setPOItems(fetchedPOItems);
+    setItems(catalog);
+    setLocations(fetchedLocations);
+    setSuppliers(fetchedSuppliers);
+    setProjects(fetchedProjects);
   }
 
   function findItem(itemId: number) {
@@ -85,6 +94,15 @@ export default function POdetail() {
 
   function findLocation(locationId: number) {
     return locations.find((l) => l.id === locationId);
+  }
+
+  function findSupplier(supplierId: number) {
+    return suppliers.find((s) => s.id === supplierId)?.name ?? "—";
+  }
+
+  function findProject(projectId: number | null) {
+    if (projectId === null) return "—";
+    return projects.find((p) => p.id === projectId)?.name ?? "—";
   }
 
   useEffect(() => {
@@ -119,12 +137,12 @@ export default function POdetail() {
             <div className="text-white">${Number(po.total_cost).toFixed(2)}</div>
           </div>
           <div>
-            <div className="text-xs">Supplier ID</div>
-            <div className="text-white">{po.supplier_id}</div>
+            <div className="text-xs">Supplier</div>
+            <div className="text-white">{findSupplier(po.supplier_id)}</div>
           </div>
           <div>
-            <div className="text-xs">Project ID</div>
-            <div className="text-white">{po.project_id ?? "—"}</div>
+            <div className="text-xs">Project</div>
+            <div className="text-white">{findProject(po.project_id)}</div>
           </div>
         </div>
       </div>

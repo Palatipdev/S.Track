@@ -200,7 +200,7 @@ which reduces friction compared to typing
 
 ### 2026-09-07 — <topic>
 - What I learned (in my own words):
-- Why it matters / where it applies:
+- Why it matters / where it applies:w
 - Open question I still have:
 
 <!-- Add new entries above this line -->
