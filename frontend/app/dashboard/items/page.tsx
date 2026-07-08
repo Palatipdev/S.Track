@@ -3,6 +3,7 @@ import { getToken } from "@/lib/auth";
 import { useSubmitGuard } from "@/lib/useSubmitGuard";
 import { fetchJson } from "@/lib/fetchJson";
 import { useState, useEffect } from "react";
+import { PageHeader } from "@/components/PageHeader";
 
 type Item = {
   id: number;
@@ -68,42 +69,38 @@ export default function ItemsPage() {
 
   return (
     <div>
-      <div className="mb-6 flex items-center justify-between">
-        <h1 className="text-xl font-semibold">Items</h1>
-        <button
-          onClick={() => setShowAddModal(true)}
-          className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium hover:bg-blue-500"
-        >
+      <PageHeader title="Items" formCode="รายการวัสดุ">
+        <button onClick={() => setShowAddModal(true)} className="btn-primary">
           Add Item
         </button>
-      </div>
+      </PageHeader>
 
-      <div className="overflow-hidden rounded-xl border border-neutral-800">
+      <div className="card overflow-hidden">
         <table className="w-full text-sm">
-          <thead className="bg-neutral-900 text-left text-neutral-400">
+          <thead className="table-head">
             <tr>
-              <th className="px-4 py-2 font-normal">Name</th>
-              <th className="px-4 py-2 font-normal">Code</th>
-              <th className="px-4 py-2 font-normal">Category</th>
-              <th className="px-4 py-2 font-normal">Spec</th>
-              <th className="px-4 py-2 font-normal">Unit</th>
-              <th className="px-4 py-2 font-normal">Active</th>
+              <th className="px-4 py-2 font-semibold">Name</th>
+              <th className="px-4 py-2 font-semibold">Code</th>
+              <th className="px-4 py-2 font-semibold">Category</th>
+              <th className="px-4 py-2 font-semibold">Spec</th>
+              <th className="px-4 py-2 font-semibold">Unit</th>
+              <th className="px-4 py-2 font-semibold">Active</th>
             </tr>
           </thead>
           <tbody>
             {items.map((item) => (
-              <tr key={item.id} className="border-t border-neutral-800">
+              <tr key={item.id} className="border-t border-rule">
                 <td className="px-4 py-3">{item.item_name}</td>
-                <td className="px-4 py-3 text-neutral-400">{item.code ?? "—"}</td>
-                <td className="px-4 py-3 text-neutral-400">{item.category}</td>
-                <td className="px-4 py-3 text-neutral-400">{item.spec ?? "—"}</td>
-                <td className="px-4 py-3 text-neutral-400">{item.base_unit}</td>
+                <td className="px-4 py-3 font-mono text-mute">{item.code ?? "—"}</td>
+                <td className="px-4 py-3 text-mute">{item.category}</td>
+                <td className="px-4 py-3 text-mute">{item.spec ?? "—"}</td>
+                <td className="px-4 py-3 text-mute">{item.base_unit}</td>
                 <td className="px-4 py-3">{item.is_active ? "Yes" : "No"}</td>
               </tr>
             ))}
             {items.length === 0 && (
               <tr>
-                <td colSpan={6} className="px-4 py-6 text-center text-neutral-500">
+                <td colSpan={6} className="px-4 py-6 text-center text-mute">
                   No items yet.
                 </td>
               </tr>
@@ -113,60 +110,60 @@ export default function ItemsPage() {
       </div>
 
       {showAddModal && (
-        <div className="fixed inset-0 flex items-center justify-center bg-black/60 p-4">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 p-4">
           <form
             onSubmit={handleAddItem}
-            className="w-full max-w-md rounded-xl bg-neutral-900 p-6"
+            className="card w-full max-w-md p-6"
           >
             <h2 className="mb-4 text-lg font-semibold">Add Item</h2>
 
             <div className="mb-3">
-              <label className="mb-1 block text-sm text-neutral-400">Name</label>
+              <label className="mb-1 block text-sm text-mute">Name</label>
               <input
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 required
-                className="w-full rounded-lg bg-neutral-800 px-3 py-2 text-sm text-white"
+                className="field"
               />
             </div>
 
             <div className="mb-3">
-              <label className="mb-1 block text-sm text-neutral-400">Code (optional)</label>
+              <label className="mb-1 block text-sm text-mute">Code (optional)</label>
               <input
                 value={code}
                 onChange={(e) => setCode(e.target.value)}
-                className="w-full rounded-lg bg-neutral-800 px-3 py-2 text-sm text-white"
+                className="field"
               />
             </div>
 
             <div className="mb-3">
-              <label className="mb-1 block text-sm text-neutral-400">Category</label>
+              <label className="mb-1 block text-sm text-mute">Category</label>
               <input
                 value={category}
                 onChange={(e) => setCategory(e.target.value)}
                 required
                 placeholder="ก่อสร้าง / ไฟฟ้า / ประปา / เครื่องมือ"
-                className="w-full rounded-lg bg-neutral-800 px-3 py-2 text-sm text-white"
+                className="field"
               />
             </div>
 
             <div className="mb-3">
-              <label className="mb-1 block text-sm text-neutral-400">Spec (optional)</label>
+              <label className="mb-1 block text-sm text-mute">Spec (optional)</label>
               <input
                 value={spec}
                 onChange={(e) => setSpec(e.target.value)}
-                className="w-full rounded-lg bg-neutral-800 px-3 py-2 text-sm text-white"
+                className="field"
               />
             </div>
 
             <div className="mb-4">
-              <label className="mb-1 block text-sm text-neutral-400">Unit</label>
+              <label className="mb-1 block text-sm text-mute">Unit</label>
               <input
                 value={unit}
                 onChange={(e) => setUnit(e.target.value)}
                 required
                 placeholder="ตัว / ถุง / เมตร"
-                className="w-full rounded-lg bg-neutral-800 px-3 py-2 text-sm text-white"
+                className="field"
               />
             </div>
 
@@ -174,14 +171,14 @@ export default function ItemsPage() {
               <button
                 type="button"
                 onClick={() => setShowAddModal(false)}
-                className="rounded-lg px-4 py-2 text-sm text-neutral-400 hover:text-white"
+                className="btn-ghost"
               >
                 Cancel
               </button>
               <button
                 type="submit"
                 disabled={isSubmitting}
-                className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium hover:bg-blue-500 disabled:opacity-50"
+                className="btn-primary"
               >
                 {isSubmitting ? "Creating..." : "Create"}
               </button>

@@ -1,0 +1,12 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(./venv/Scripts/python.exe -c \"import app.auth; print\\('auth module loaded OK, keys:', len\\(app.auth._jwks_cache.get\\('keys', []\\)\\)\\)\")",
+      "Bash(mkdir -p \"/c/Users/riaza/Documents/s-track/.claude/skills/frontend-design\")",
+      "Bash(python .claude/skills/ui-ux-pro-max/scripts/search.py \"construction procurement inventory management corporate blue professional\" --design-system --density 8 --motion 3 -p \"S.Track\")"
+    ],
+    "additionalDirectories": [
+      "C:\\Users\\riaza\\Documents\\s-track\\.claude\\skills"
+    ]
+  }
+}

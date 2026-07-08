@@ -4,6 +4,7 @@ import { useSubmitGuard } from "@/lib/useSubmitGuard";
 import { fetchJson } from "@/lib/fetchJson";
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import { PageHeader } from "@/components/PageHeader";
 
 type StorageLocation = { id: number; name: string };
 type Project = { id: number; name: string };
@@ -105,13 +106,12 @@ export default function WithdrawPage() {
 
   return (
     <div>
-      <h1 className="mb-1 text-xl font-semibold">Withdraw</h1>
-      <p className="mb-6 text-sm text-neutral-500">FM-004 ใบเบิกวัสดุ</p>
+      <PageHeader title="Withdraw" formCode="FM-004 ใบเบิกวัสดุ" />
 
       <form onSubmit={handleSubmit}>
         <div className="mb-4 grid grid-cols-1 gap-3 md:grid-cols-2">
           <div>
-            <label className="mb-1 block text-sm text-neutral-400">Location</label>
+            <label className="mb-1 block text-sm text-mute">Location</label>
             <select
               value={locationId}
               onChange={(e) => {
@@ -119,7 +119,7 @@ export default function WithdrawPage() {
                 setLines([{ item_id: "", quantity: "" }]);
               }}
               required
-              className="w-full rounded-lg bg-neutral-800 px-3 py-2 text-sm text-white"
+              className="field"
             >
               <option value="">Select location</option>
               {locations.map((loc) => (
@@ -129,12 +129,12 @@ export default function WithdrawPage() {
           </div>
 
           <div>
-            <label className="mb-1 block text-sm text-neutral-400">Project</label>
+            <label className="mb-1 block text-sm text-mute">Project</label>
             <select
               value={projectId}
               onChange={(e) => setProjectId(e.target.value)}
               required
-              className="w-full rounded-lg bg-neutral-800 px-3 py-2 text-sm text-white"
+              className="field"
             >
               <option value="">Select project</option>
               {projects.map((p) => (
@@ -144,11 +144,11 @@ export default function WithdrawPage() {
           </div>
         </div>
 
-        {!locationId && <p className="mb-4 text-sm text-neutral-500">Select a location to see available stock.</p>}
+        {!locationId && <p className="mb-4 text-sm text-mute">Select a location to see available stock.</p>}
 
         {locationId && (
           <>
-            <div className="mb-2 text-sm text-neutral-400">Items</div>
+            <div className="mb-2 text-sm text-mute">Items</div>
             {lines.map((line, i) => {
               const available = line.item_id ? stockFor(line.item_id) : null;
               const over = available !== null && Number(line.quantity) > available;
@@ -158,7 +158,7 @@ export default function WithdrawPage() {
                     value={line.item_id}
                     onChange={(e) => updateLine(i, "item_id", e.target.value)}
                     required
-                    className="rounded-lg bg-neutral-800 px-2 py-2 text-sm text-white"
+                    className="field px-2"
                   >
                     <option value="">Item</option>
                     {stockLevels.map((level) => {
@@ -176,10 +176,10 @@ export default function WithdrawPage() {
                       value={line.quantity}
                       onChange={(e) => updateLine(i, "quantity", e.target.value)}
                       required
-                      className="w-full rounded-lg bg-neutral-800 px-2 py-2 text-sm text-white"
+                      className="field px-2"
                     />
                     {over && (
-                      <p className="mt-1 text-xs text-amber-400">
+                      <p className="mt-1 text-xs font-medium text-amber-700">
                         Exceeds available stock ({available?.toFixed(2)})
                       </p>
                     )}
@@ -190,7 +190,7 @@ export default function WithdrawPage() {
             <button
               type="button"
               onClick={addLine}
-              className="mb-4 text-sm text-blue-400 hover:underline"
+              className="mb-4 cursor-pointer text-sm font-medium text-ink hover:underline"
             >
               + Add item
             </button>
@@ -200,7 +200,7 @@ export default function WithdrawPage() {
         <button
           type="submit"
           disabled={isSubmitting}
-          className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium hover:bg-blue-500 disabled:opacity-50"
+          className="btn-primary"
         >
           {isSubmitting ? "Submitting..." : "Submit Withdrawal"}
         </button>

@@ -23,10 +23,15 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   }
 
   return (
-    <div className="min-h-screen flex flex-col md:flex-row bg-neutral-950 text-neutral-100">
+    <div className="min-h-screen flex flex-col md:flex-row bg-mist text-body">
       {/* Desktop sidebar */}
-      <aside className="hidden md:flex md:w-56 md:flex-col md:border-r md:border-neutral-800 md:px-4 md:py-6">
-        <div className="text-lg font-semibold mb-8 px-2">S.Track</div>
+      <aside className="hidden md:flex md:w-60 md:flex-col md:border-r md:border-rule md:bg-paper md:px-4 md:py-6">
+        <div className="mb-8 px-2">
+          <div className="text-lg font-semibold text-ink-deep">S.Track</div>
+          <div className="mt-1 border-t-2 border-ink" />
+          <div className="mt-[2px] border-t border-rule" />
+          <div className="mt-1.5 text-[11px] text-mute">ส.บุญมีฤทธิ์วิศวกรรม</div>
+        </div>
         <nav className="flex flex-col gap-1">
           {navItems.map((item) => {
             const active = pathname === item.href;
@@ -34,8 +39,10 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
               <Link
                 key={item.href}
                 href={item.href}
-                className={`rounded-lg px-3 py-2 text-sm ${
-                  active ? "bg-neutral-800 text-white" : "text-neutral-400 hover:bg-neutral-900 hover:text-white"
+                className={`rounded-md px-3 py-2 text-sm ${
+                  active
+                    ? "bg-ink font-medium text-white"
+                    : "text-mute hover:bg-ink-soft hover:text-ink-deep"
                 }`}
               >
                 {item.label}
@@ -45,24 +52,26 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         </nav>
         <button
           onClick={handleSignOut}
-          className="mt-auto rounded-lg px-3 py-2 text-left text-sm text-neutral-400 hover:bg-neutral-900 hover:text-white"
+          className="mt-auto cursor-pointer rounded-md px-3 py-2 text-left text-sm text-mute hover:bg-ink-soft hover:text-ink-deep"
         >
           Sign out
         </button>
       </aside>
 
       {/* Main content */}
-      <main className="flex-1 px-4 py-6 pb-20 md:pb-6">{children}</main>
+      <main className="flex-1 px-4 py-6 pb-24 md:px-8 md:pb-6">{children}</main>
 
       {/* Mobile bottom tab bar */}
-      <nav className="fixed bottom-0 left-0 right-0 flex md:hidden border-t border-neutral-800 bg-neutral-950">
+      <nav className="fixed bottom-0 left-0 right-0 flex md:hidden border-t border-rule bg-paper">
         {navItems.map((item) => {
           const active = pathname === item.href;
           return (
             <Link
               key={item.href}
               href={item.href}
-              className={`flex-1 py-3 text-center text-xs ${active ? "text-white" : "text-neutral-500"}`}
+              className={`flex-1 py-3 text-center text-xs ${
+                active ? "font-medium text-ink" : "text-mute"
+              }`}
             >
               {item.label}
             </Link>

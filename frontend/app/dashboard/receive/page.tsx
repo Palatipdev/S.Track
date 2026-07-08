@@ -2,8 +2,9 @@
 import { getToken } from "@/lib/auth";
 import { useSubmitGuard } from "@/lib/useSubmitGuard";
 import { fetchJson } from "@/lib/fetchJson";
-import { useState, useEffect } from "react";
+import { useState, useEffect, Suspense } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
+import { PageHeader } from "@/components/PageHeader";
 
 type PurchaseOrder = {
   id: number;
@@ -37,6 +38,14 @@ type LineDraft = {
 const CONDITIONS = ["good", "damaged_package_unopened", "damaged", "wrong_item"];
 
 export default function ReceivePage() {
+  return (
+    <Suspense fallback={<p className="text-mute">Loading…</p>}>
+      <ReceiveForm />
+    </Suspense>
+  );
+}
+
+function ReceiveForm() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const poId = searchParams.get("po_id");
@@ -138,28 +147,29 @@ export default function ReceivePage() {
   }
 
   if (!poId) {
-    return <p className="text-neutral-500">No PO selected. Go to a purchase order and click &quot;Receive against this PO&quot;.</p>;
+    return <p className="text-mute">No PO selected. Go to a purchase order and click &quot;Receive against this PO&quot;.</p>;
   }
 
   if (!po) {
-    return <p className="text-neutral-500">Loading…</p>;
+    return <p className="text-mute">Loading…</p>;
   }
 
   return (
     <div>
-      <h1 className="mb-1 text-xl font-semibold">Receive — {po.po_number}</h1>
-      <p className="mb-6 text-sm text-neutral-500">
-        FM-003 ใบรับวัสดุ · {findSupplier(po.supplier_id)} · {findProject(po.project_id)}
-      </p>
+      <PageHeader
+        title={`Receive — ${po.po_number}`}
+        formCode="FM-003 ใบรับวัสดุ"
+        subtitle={`${findSupplier(po.supplier_id)} · ${findProject(po.project_id)}`}
+      />
 
       <form onSubmit={handleSubmit}>
         <div className="mb-6">
-          <label className="mb-1 block text-sm text-neutral-400">Receiving Location</label>
+          <label className="mb-1 block text-sm text-mute">Receiving Location</label>
           <select
             value={locationId}
             onChange={(e) => setLocationId(e.target.value)}
             required
-            className="w-full rounded-lg bg-neutral-800 px-3 py-2 text-sm text-white md:w-64"
+            className="field md:w-64"
           >
             <option value="">Select location</option>
             {locations.map((loc) => (
@@ -173,51 +183,51 @@ export default function ReceivePage() {
           const line = lines[i];
           if (!line) return null;
           return (
-            <div key={poItem.id} className="mb-4 rounded-xl border border-neutral-800 p-4">
+            <div key={poItem.id} className="card mb-4 p-4">
               <div className="mb-3 flex items-center justify-between">
                 <div>
                   <div className="font-medium">{item?.item_name ?? `Item #${poItem.item_id}`}</div>
-                  <div className="text-xs text-neutral-500">{item?.spec} · Ordered {Number(poItem.item_qty).toFixed(2)}</div>
+                  <div className="text-xs text-mute">{item?.spec} · Ordered {Number(poItem.item_qty).toFixed(2)}</div>
                 </div>
               </div>
 
               <div className="grid grid-cols-3 gap-2 mb-3">
                 <div>
-                  <label className="mb-1 block text-xs text-neutral-400">Received Qty</label>
+                  <label className="mb-1 block text-xs text-mute">Received Qty</label>
                   <input
                     value={line.received_qty}
                     onChange={(e) => updateLine(i, "received_qty", e.target.value)}
                     required
-                    className="w-full rounded-lg bg-neutral-800 px-2 py-2 text-sm text-white"
+                    className="field px-2"
                   />
                 </div>
                 <div>
-                  <label className="mb-1 block text-xs text-neutral-400">Accepted Qty</label>
+                  <label className="mb-1 block text-xs text-mute">Accepted Qty</label>
                   <input
                     value={line.accepted_qty}
                     onChange={(e) => updateLine(i, "accepted_qty", e.target.value)}
                     required
-                    className="w-full rounded-lg bg-neutral-800 px-2 py-2 text-sm text-white"
+                    className="field px-2"
                   />
                 </div>
                 <div>
-                  <label className="mb-1 block text-xs text-neutral-400">Rejected Qty</label>
+                  <label className="mb-1 block text-xs text-mute">Rejected Qty</label>
                   <input
                     value={line.rejected_qty}
                     onChange={(e) => updateLine(i, "rejected_qty", e.target.value)}
                     required
-                    className="w-full rounded-lg bg-neutral-800 px-2 py-2 text-sm text-white"
+                    className="field px-2"
                   />
                 </div>
               </div>
 
               <div className="grid grid-cols-2 gap-2 mb-3">
                 <div>
-                  <label className="mb-1 block text-xs text-neutral-400">Condition</label>
+                  <label className="mb-1 block text-xs text-mute">Condition</label>
                   <select
                     value={line.condition}
                     onChange={(e) => updateLine(i, "condition", e.target.value)}
-                    className="w-full rounded-lg bg-neutral-800 px-2 py-2 text-sm text-white"
+                    className="field px-2"
                   >
                     {CONDITIONS.map((c) => (
                       <option key={c} value={c}>{c.replace(/_/g, " ")}</option>
@@ -225,16 +235,16 @@ export default function ReceivePage() {
                   </select>
                 </div>
                 <div>
-                  <label className="mb-1 block text-xs text-neutral-400">Note</label>
+                  <label className="mb-1 block text-xs text-mute">Note</label>
                   <input
                     value={line.condition_note}
                     onChange={(e) => updateLine(i, "condition_note", e.target.value)}
-                    className="w-full rounded-lg bg-neutral-800 px-2 py-2 text-sm text-white"
+                    className="field px-2"
                   />
                 </div>
               </div>
 
-              <label className="flex items-center gap-2 text-xs text-neutral-400">
+              <label className="flex items-center gap-2 text-xs text-mute">
                 <input
                   type="checkbox"
                   checked={line.return_to_supplier}
@@ -247,18 +257,18 @@ export default function ReceivePage() {
         })}
 
         <div className="mb-6">
-          <label className="mb-1 block text-sm text-neutral-400">Receipt Note (optional)</label>
+          <label className="mb-1 block text-sm text-mute">Receipt Note (optional)</label>
           <input
             value={note}
             onChange={(e) => setNote(e.target.value)}
-            className="w-full rounded-lg bg-neutral-800 px-3 py-2 text-sm text-white"
+            className="field"
           />
         </div>
 
         <button
           type="submit"
           disabled={isSubmitting}
-          className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium hover:bg-blue-500 disabled:opacity-50"
+          className="btn-primary"
         >
           {isSubmitting ? "Submitting..." : "Submit Receipt"}
         </button>

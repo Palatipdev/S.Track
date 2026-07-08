@@ -38,16 +38,16 @@ type Supplier = { id: number; name: string };
 type Project = { id: number; name: string };
 
 const STATUS_STYLES: Record<string, string> = {
-  open: "bg-neutral-700 text-neutral-100",
-  partially_received: "bg-amber-900 text-amber-200",
-  received: "bg-emerald-900 text-emerald-200",
-  closed: "bg-neutral-800 text-neutral-400",
-  cancelled: "bg-red-900 text-red-200",
+  open: "border-ink/40 bg-ink-soft text-ink-deep",
+  partially_received: "border-amber-300 bg-amber-50 text-amber-700",
+  received: "border-emerald-300 bg-emerald-50 text-emerald-700",
+  closed: "border-neutral-300 bg-neutral-100 text-neutral-500",
+  cancelled: "border-red-300 bg-red-50 text-red-700",
 };
 
 function StatusChip({ status }: { status: string }) {
   return (
-    <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${STATUS_STYLES[status] ?? "bg-neutral-800"}`}>
+    <span className={`inline-block rounded border px-2 py-0.5 font-mono text-[11px] uppercase tracking-wide ${STATUS_STYLES[status] ?? "border-neutral-300 bg-neutral-100 text-neutral-500"}`}>
       {status.replace("_", " ")}
     </span>
   );
@@ -110,54 +110,54 @@ export default function POdetail() {
   }, [poId]);
 
   if (!po) {
-    return <p className="text-neutral-500">Loading…</p>;
+    return <p className="text-mute">Loading…</p>;
   }
 
   return (
     <div>
       <button
         onClick={() => router.push("/dashboard")}
-        className="mb-4 text-sm text-neutral-400 hover:text-white"
+        className="mb-4 cursor-pointer text-sm text-mute hover:text-ink-deep"
       >
         ← Back to Purchase Orders
       </button>
 
-      <div className="mb-6 rounded-xl border border-neutral-800 p-5">
+      <div className="card mb-6 border-t-2 border-t-ink p-5">
         <div className="mb-2 flex items-center justify-between">
-          <h1 className="text-xl font-semibold">{po.po_number}</h1>
+          <h1 className="font-mono text-xl font-semibold">{po.po_number}</h1>
           <StatusChip status={po.status} />
         </div>
-        <div className="grid grid-cols-2 gap-3 text-sm text-neutral-400 md:grid-cols-4">
+        <div className="grid grid-cols-2 gap-3 text-sm text-mute md:grid-cols-4">
           <div>
             <div className="text-xs">Expected Delivery</div>
-            <div className="text-white">{po.expected_delivery}</div>
+            <div className="text-body">{po.expected_delivery}</div>
           </div>
           <div>
             <div className="text-xs">Total</div>
-            <div className="text-white">${Number(po.total_cost).toFixed(2)}</div>
+            <div className="font-mono tabular-nums text-body">฿{Number(po.total_cost).toLocaleString("th-TH", { minimumFractionDigits: 2 })}</div>
           </div>
           <div>
             <div className="text-xs">Supplier</div>
-            <div className="text-white">{findSupplier(po.supplier_id)}</div>
+            <div className="text-body">{findSupplier(po.supplier_id)}</div>
           </div>
           <div>
             <div className="text-xs">Project</div>
-            <div className="text-white">{findProject(po.project_id)}</div>
+            <div className="text-body">{findProject(po.project_id)}</div>
           </div>
         </div>
       </div>
 
-      <h2 className="mb-3 text-sm font-medium text-neutral-400">Line Items</h2>
-      <div className="overflow-hidden rounded-xl border border-neutral-800">
+      <h2 className="mb-3 text-sm font-medium text-mute">Line Items</h2>
+      <div className="card overflow-hidden">
         <table className="w-full text-sm">
-          <thead className="bg-neutral-900 text-left text-neutral-400">
+          <thead className="table-head">
             <tr>
-              <th className="px-4 py-2 font-normal">Item</th>
-              <th className="px-4 py-2 font-normal">Spec</th>
-              <th className="px-4 py-2 font-normal">Item ID</th>
-              <th className="px-4 py-2 font-normal">Ordered Qty</th>
-              <th className="px-4 py-2 font-normal">Unit Price</th>
-              <th className="px-4 py-2 font-normal">Destination Location</th>
+              <th className="px-4 py-2 font-semibold">Item</th>
+              <th className="px-4 py-2 font-semibold">Spec</th>
+              <th className="px-4 py-2 font-semibold">Item ID</th>
+              <th className="px-4 py-2 font-semibold">Ordered Qty</th>
+              <th className="px-4 py-2 font-semibold">Unit Price</th>
+              <th className="px-4 py-2 font-semibold">Destination Location</th>
             </tr>
           </thead>
           <tbody>
@@ -165,12 +165,12 @@ export default function POdetail() {
               const item = findItem(line.item_id);
               const location = findLocation(line.location);
               return (
-                <tr key={line.id} className="border-t border-neutral-800">
+                <tr key={line.id} className="border-t border-rule">
                   <td className="px-4 py-3">{item?.item_name ?? "—"}</td>
-                  <td className="px-4 py-3 text-neutral-400">{item?.spec ?? "—"}</td>
-                  <td className="px-4 py-3 text-neutral-500">{line.item_id}</td>
-                  <td className="px-4 py-3">{Number(line.item_qty).toFixed(2)}</td>
-                  <td className="px-4 py-3">${Number(line.price).toFixed(2)}</td>
+                  <td className="px-4 py-3 text-mute">{item?.spec ?? "—"}</td>
+                  <td className="px-4 py-3 font-mono text-mute">{line.item_id}</td>
+                  <td className="px-4 py-3 font-mono tabular-nums">{Number(line.item_qty).toFixed(2)}</td>
+                  <td className="px-4 py-3 font-mono tabular-nums">฿{Number(line.price).toLocaleString("th-TH", { minimumFractionDigits: 2 })}</td>
                   <td className="px-4 py-3">{location?.name ?? line.location}</td>
                 </tr>
               );
@@ -181,7 +181,7 @@ export default function POdetail() {
 
       <button
         onClick={() => router.push(`/dashboard/receive?po_id=${po.id}`)}
-        className="mt-6 rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium hover:bg-blue-500"
+        className="btn-primary mt-6"
       >
         Receive against this PO
       </button>

@@ -48,32 +48,40 @@
 
 **Phase A: CORE DONE (2026-07-06/07).** Backend and frontend both wired end-to-end across all 8 v2 pages (dashboard/PO list, PO detail, receive, stock, withdraw, items, locations, shared layout shell). See README.md "v2 Pivot — Phase A" section for the full done-list.
 
-**Demo with the aunt/manager is in 2 days from 2026-07-07 (i.e. ~2026-07-09).** User is ahead of schedule. Plan for the remaining time, decided with the user this session:
+**Test walkthrough: DONE (2026-07-08).** Full end-to-end pass with real Thai test data completed and confirmed — see "Test Data Walkthrough" below, all steps passed.
 
-1. **Today/next (2026-07-07, in progress)**: finish end-to-end test pass with real Thai test data (see "Test Data Walkthrough" below), fix bugs as found.
-2. **Architecture grilling day (not yet done — do this next)**: per `docs/claude-rule.md` Rule 9 (added this session), dedicate a full session to grilling the user on the codebase like an interviewer — data model why's, request-flow tracing (PO ingest → receive → stock update → withdraw), enum/stock_movements/stock_levels reasoning — pulling answers from actual code, not memory. User explicitly asked for this before the demo so they can defend the project confidently in interviews and to the aunt.
-3. **Frontend visual/design pass**: user says current UI is functional but "templated/AI-like." User is gathering reference designs (sent some dashboard inspiration images this session — sidebar SaaS dashboards, stat-tile rows, financial dashboards) to redo styling. Do this AFTER the grilling session, with a full day of runway before the demo, not instead of it.
-4. **After grilling + redesign**: user wants to post on LinkedIn about Phase A completion + the upcoming manager meeting, to keep recruiter visibility up during internship applications.
+**Demo with the aunt/manager is today/very soon (2026-07-08/09).** Remaining plan, in order:
+
+1. ~~Finish end-to-end test pass~~ — **DONE 2026-07-08**.
+2. ~~Architecture grilling~~ — **IN PROGRESS 2026-07-08**, see "Grilling Session Log" below. Rounds 1-2 of 6 done (data model, receipt endpoint). Rounds 3-6 (withdraw/stock endpoint, auth/JWKS, multi-tenancy, frontend patterns) not yet run — resume here if picking the grilling back up.
+3. **Frontend visual/design pass — NEXT UP.** User wants medium blue + white color scheme, referencing the company's actual paper PO document (บริษัท ส.บุญมีฤทธิ์วิศวกรรม จำกัด letterhead — blue ink/logo on white). Two Claude Code skills installed for this (both require a **new conversation** to load — skills only load at session start, this chat's context does not carry over):
+   - `.claude/skills/ui-ux-pro-max/SKILL.md` — reference database (color palettes, font pairings, component patterns per stack).
+   - `.claude/skills/frontend-design/SKILL.md` — process/philosophy skill (avoid templated AI-design defaults, build a token system, one signature element, critique before building). Use this one to drive *how* decisions get made; pull concrete options from `ui-ux-pro-max`. **This skill's own process requires grounding the design in a concrete subject/brief before proposing a token system — for S.Track that grounding IS the blue/white PO letterhead reference above (บริษัท ส.บุญมีฤทธิ์วิศวกรรม จำกัด document, medium blue ink/logo on white, construction-materials/procurement domain). Do not let it default to a generic palette; derive the palette, type, and signature element from that actual document and the fact that end users are Thai construction-company staff (unit leaders, project managers), not a generic SaaS audience.**
+4. **After redesign**: LinkedIn post about Phase A completion + the manager meeting, for recruiter visibility during internship applications.
+
+**Reply-length note for whoever resumes**: user has a standing rule (memory `feedback_terse_replies.md`, also `docs/claude-rule.md` Rule 4) for 1-2 sentence replies by default. This does NOT need re-explaining in a new chat — it's already loaded automatically via memory. The one legitimate exception is Rule 9 grilling sessions, which call for longer structured answers by design. If a new chat drifts into paragraphs outside of grilling, the fix is an in-the-moment correction ("too long, cut it"), not more upfront context.
+
+**Voice-to-text note**: user has been using voice-to-text for architecture discussions/grilling this session and found it genuinely valuable — it lets them elaborate ideas out loud without the friction of typing, which surfaces where their verbal explanation is shaky in a way that typing doesn't. This is now a deliberate practice tool, not just an input method — see memory `feedback_grilling_method.md` for how this ties into the grilling method and progress tracking.
 
 - [ ] Get the manager's ER diagram; diff against `Project-Spec-v2.md` entities; record decisions in its Decision Log.
 - [ ] Unit-consistency question still unanswered by manager (blocks whether `items.base_unit` needs to move to per-transaction).
 - [ ] Wire receipt photo upload into the receive form (needs `receipt.id` from POST response before calling the photo endpoint).
 - [ ] `location_members` assignment UI — deferred to a self-service "join your location" flow (worker/unit-leader picks their own location), not an admin picker. Reasoning: some unit leaders are low-tech / may not have app access yet; forcing admin-side assignment now creates friction for no benefit before the core flow is proven.
-- [ ] Visual/design pass on frontend — see plan above.
+- [ ] No "deactivate item" endpoint yet — `is_active` is set once at item creation (from user input) and never changed afterward; confirmed via grilling this session there is no automatic link between `stock_levels.qty` hitting 0 and `is_active` (correct — running out ≠ discontinuing a product). A manual PATCH endpoint for this is a Phase B item.
 - [ ] Create-user endpoint (test users still inserted by hand).
 - [ ] RLS policy stubs scoped by `company_id`.
 - Retired by pivot: budget auto-deduct, requested-vs-ordered budget overview (budget lives in the ERP).
 
-## Test Data Walkthrough (in progress 2026-07-07)
+## Test Data Walkthrough (COMPLETED 2026-07-08)
 
-Real test pass using Thai test data end-to-end, in this order (later steps depend on earlier ones existing):
+Full pass using Thai test data end-to-end — all 6 steps confirmed passing:
 
 1. **`/dashboard/locations`**: Central (`สโตร์กลาง`, type `central`, no parent) → Unit (`หน่วยกรุงเทพ`, type `unit`, parent = central) → Project site (`โครงการ BR69011`, type `project_site`, parent = unit, project = a seeded `Project` row, e.g. "Sala Bodhgaya" id 2 already exists in DB).
 2. **`/dashboard/items`**: ไม้สัก 150cm (category ก่อสร้าง, spec `2 1/2" x 7" x 150cm`, unit ตัว), ปูนซีเมนต์ (category ก่อสร้าง, spec blank/null, unit ถุง).
 3. **`/dashboard` Add PO**: PO Number `SC10-6907-0008`, supplier (seed via Swagger if needed, e.g. ไทยวัสดุก่อสร้าง), project = โครงการ BR69011, 2 lines at หน่วยกรุงเทพ (ไม้สัก qty 8 price 450, ปูนซีเมนต์ qty 20 price 150).
-4. **Receive against the PO**: ไม้สัก received 8 / accepted 7 / rejected 1 / condition damaged / return_to_supplier checked; ปูนซีเมนต์ received 20 / accepted 20 / rejected 0 / good. Expected PO status after: `partially_received` (one line short of full accepted qty).
-5. **`/dashboard/stock`**: select หน่วยกรุงเทพ, expect ไม้สัก qty 7, ปูนซีเมนต์ qty 20.
-6. **`/dashboard/withdraw`**: withdraw 5 ปูนซีเมนต์ from หน่วยกรุงเทพ against โครงการ BR69011 → stock should drop to 15. Also test over-withdrawing (e.g. qty 999) — should show amber warning but still allow submit (deliberate no-block design decision).
+4. **Receive against the PO**: ไม้สัก received 8 / accepted 7 / rejected 1 / condition damaged / return_to_supplier checked; ปูนซีเมนต์ received 20 / accepted 20 / rejected 0 / good. **Confirmed**: PO status → `partially_received`.
+5. **`/dashboard/stock`**: select หน่วยกรุงเทพ. **Confirmed**: ไม้สัก qty 7, ปูนซีเมนต์ qty 20.
+6. **`/dashboard/withdraw`**: withdraw 5 ปูนซีเมนต์ from หน่วยกรุงเทพ against โครงการ BR69011. **Confirmed**: stock → 15. Over-withdraw (qty 999) → amber warning shown, submit still allowed as designed.
 
 **Bugs found and fixed during this pass** (all committed):
 - `Items.company_id` FK, `Items.is_active` Boolean, `POItem.id`/`item_id` type fixes — earlier session.
@@ -84,7 +92,19 @@ Real test pass using Thai test data end-to-end, in this order (later steps depen
 - Added `po_number` column to `purchase_orders` (model + schema + endpoint + migration `481c2a16e72d`).
 - `ItemIn.spec` was `str` (required) but cement legitimately has no spec — changed to `Optional[str] = None` in schema AND `nullable=True` in the `Items.spec` model column (migration `c4db68a2c257`) — both layers needed to agree, schema-only fix wasn't enough (DB NOT NULL constraint still rejected it).
 - Double-POST-firing bug: clicking "Add"/submit buttons twice fired two requests. Fixed with a new shared hook `frontend/lib/useSubmitGuard.ts` (`{ isSubmitting, guard }`) wired into all 5 POST forms (Add PO, Add Item, Add Location, Receive, Withdraw) — button disables + shows "..." label while a request is in flight.
-- Still open at time of writing: `locations.map is not a function` crash on `/dashboard/stock` — `setLocations(await locRes.json())` sets whatever the response body is without checking `res.ok`; if `/storage_location` errors, an object (not array) lands in state. Not yet root-caused — check the Network tab response for that specific request when resuming.
+- **`locations.map is not a function` / `purchaseOrders.filter is not a function` crashes — FIXED 2026-07-08.** Root cause: pages set fetch responses into state without checking `res.ok`; a failed request (e.g. 401) put a non-array error body into state. Fixed by adding `frontend/lib/fetchJson.ts` (checks `res.ok`, logs status+body to console, throws on failure) and wiring it into every GET call across all 7 pages (dashboard, po/[id], receive, stock, withdraw, items, locations).
+- **Root cause of the 401s themselves — FIXED 2026-07-08.** `backend/app/auth.py`'s `get_current_user` called `supabase.auth.get_user(token)`, a network round-trip to Supabase's Auth server on every request. Under fast navigation (multiple concurrent requests), this occasionally failed/timed out and got mislabeled "Invalid token" by a too-broad `except Exception`. Fixed by switching to **local JWT verification**: fetch Supabase's JWKS once at module load (`_jwks_cache`), match the token's `kid` header to the right public key (`find_signing_key`), then verify the signature locally via `jose.jwt.decode(token, signing_key, algorithms=["ES256"], audience="authenticated")` — no network call per request. User wrote most of the `kid`-matching loop solo (correctly) before time pressure led to Claude finishing the wiring into `get_current_user` directly (explicit speed-override, ~3hrs before demo). Needed a `requests` pip install into the backend venv (was missing despite being a transitive dep of `supabase-py`) — caused a temporary "Failed to fetch" everywhere until installed.
+- Also found: PO list / PO detail / receive pages showed raw `supplier_id`/`project_id` instead of names — fixed with `findSupplier`/`findProject` lookup helpers (same `.find()` pattern as existing `findItem`/`findLocation`), wired into `dashboard/page.tsx`, `dashboard/po/[id]/page.tsx`, and `dashboard/receive/page.tsx`.
+
+## Grilling Session Log (started 2026-07-08)
+
+Per Rule 9, running interview-style Q&A against the real codebase (not generic questions) — user answers from memory in both a technical register and a plain-customer register, then verifies against actual code. See memory `feedback_grilling_method.md` for the full method and cross-session progress tracking.
+
+**Round 1 (data model) — done, solid.** `stock_movements` vs `stock_levels` (audit history vs maintained running total, bank-statement-vs-balance analogy), composite PK on `stock_levels` as the natural key + uniqueness guarantee. One real misconception caught and corrected: user conflated `items.is_active` with `stock_levels.qty` hitting zero — traced the actual code (`is_active` only ever set once, at item creation, from user input; no endpoint auto-deactivates on qty=0) and confirmed this is correct behavior, not a bug — running out ≠ discontinuing a product. Real gap identified: no manual "deactivate item" PATCH endpoint exists yet (Phase B).
+
+**Round 2 (receipt endpoint) — done, strong finish.** Row-level trace of `POST /receipt` (1 receipt header + N receipt_lines + N stock_movements + up to N stock_level upserts + 1 PO status update, per line item). Key concept, initially fuzzy then nailed on second pass: PO status must loop over **all** `po_items` for the PO (not just `body.po_lines`, the current receipt's lines) because a single receipt only reflects what arrived in *that* delivery — a partial delivery (e.g. only steel arrives, wood is still pending) would wrongly mark the whole PO `received` if computed from the receipt's own lines alone. User's own worked example (wood + steel) was interview-ready.
+
+**Not yet run**: Round 3 (withdraw endpoint + stock_level decrement), Round 4 (JWKS/auth — especially timely given today's fix), Round 5 (multi-tenancy / company_id scoping across all queries), Round 6 (frontend fetch/state patterns). Resume numbering here.
 
 ---
 
@@ -246,6 +266,18 @@ Real test pass using Thai test data end-to-end, in this order (later steps depen
   - v1 tables stay in place (soft-deprecated), no destructive migration. Delivery-photo pipeline is reused as the receipt evidence mechanism.
   - Performance concern answered in the spec: their volume is decades away from Postgres limits; the real risk is model/workflow mismatch, mitigated by the ERD diff and pilot.
 - **Next**: diff the manager's ER diagram against the spec, ask questions #1/#8/#19 first, then start Phase A (locations + items CRUD).
+
+### Session 2026-07-08 (evening): Frontend design pass 1 — blue/white letterhead theme
+- **Goal**: First visual pass across all pages, grounded in the company PO letterhead (blue ink on white).
+- **Changes**:
+  - `globals.css`: token system via Tailwind v4 `@theme` (paper/mist/ink/ink-deep/ink-soft/rule/body/mute) + component classes (`.card`, `.field`, `.btn-primary`, `.btn-ghost`, `.table-head`).
+  - `app/layout.tsx`: IBM Plex Sans Thai (UI) + IBM Plex Mono (PO numbers, codes, money, qty). `lang="th"`, real metadata title.
+  - New `components/PageHeader.tsx`: signature "letterhead double rule" (thick blue + thin light line) with Thai form-code eyebrows (FM-003/FM-004 etc.).
+  - All 7 dashboard pages + shell restyled light; status chips restyled as rubber-stamp outlines; `$` → `฿` with `toLocaleString("th-TH")`.
+  - Login page styled (was bare) — inline error message replaces `alert()` (small logic touch).
+  - Receive page wrapped in `<Suspense>` — pre-existing `useSearchParams` prerender error blocked `next build`; unrelated to styling but fixed to keep build green.
+- **Unfinished**: pass 2 = user's manual visual review. Mobile bottom nav has 6 items (guideline max 5) — structural, deferred.
+- **Next**: run the app, eyeball every page, list modifications for pass 2.
 
 <!--
 Template for the next session:

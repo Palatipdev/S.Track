@@ -1,26 +1,38 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
-
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+@theme {
+  --color-paper: #ffffff;
+  --color-mist: #f2f5fa;
+  --color-ink: #1e56a8;
+  --color-ink-deep: #143c7c;
+  --color-ink-soft: #e8f0f9;
+  --color-rule: #c9d8ec;
+  --color-body: #17273f;
+  --color-mute: #5a6b84;
+  --font-sans: var(--font-plex-thai), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-plex-mono), ui-monospace, monospace;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background: var(--color-mist);
+  color: var(--color-body);
+  font-family: var(--font-sans);
+}
+
+@layer components {
+  .card {
+    @apply rounded-lg border border-rule bg-paper shadow-sm;
+  }
+  .field {
+    @apply w-full rounded-md border border-rule bg-paper px-3 py-2 text-sm text-body placeholder:text-mute/60 focus:border-ink focus:outline-none focus:ring-2 focus:ring-ink/30;
+  }
+  .btn-primary {
+    @apply cursor-pointer rounded-md bg-ink px-4 py-2 text-sm font-medium text-white hover:bg-ink-deep focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink disabled:cursor-default disabled:opacity-50;
+  }
+  .btn-ghost {
+    @apply cursor-pointer rounded-md px-4 py-2 text-sm text-mute hover:bg-ink-soft hover:text-ink-deep;
+  }
+  .table-head {
+    @apply bg-ink-soft text-left text-xs font-semibold uppercase tracking-wide text-ink-deep;
+  }
 }

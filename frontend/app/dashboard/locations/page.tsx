@@ -3,6 +3,7 @@ import { getToken } from "@/lib/auth";
 import { useSubmitGuard } from "@/lib/useSubmitGuard";
 import { fetchJson } from "@/lib/fetchJson";
 import { useState, useEffect } from "react";
+import { PageHeader } from "@/components/PageHeader";
 
 type StorageLocation = {
   id: number;
@@ -84,38 +85,34 @@ export default function LocationsPage() {
 
   return (
     <div>
-      <div className="mb-6 flex items-center justify-between">
-        <h1 className="text-xl font-semibold">Storage Locations</h1>
-        <button
-          onClick={() => setShowAddModal(true)}
-          className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium hover:bg-blue-500"
-        >
+      <PageHeader title="Storage Locations" formCode="คลังวัสดุ">
+        <button onClick={() => setShowAddModal(true)} className="btn-primary">
           Add Location
         </button>
-      </div>
+      </PageHeader>
 
-      <div className="overflow-hidden rounded-xl border border-neutral-800">
+      <div className="card overflow-hidden">
         <table className="w-full text-sm">
-          <thead className="bg-neutral-900 text-left text-neutral-400">
+          <thead className="table-head">
             <tr>
-              <th className="px-4 py-2 font-normal">Name</th>
-              <th className="px-4 py-2 font-normal">Type</th>
-              <th className="px-4 py-2 font-normal">Parent</th>
+              <th className="px-4 py-2 font-semibold">Name</th>
+              <th className="px-4 py-2 font-semibold">Type</th>
+              <th className="px-4 py-2 font-semibold">Parent</th>
             </tr>
           </thead>
           <tbody>
             {locations.map((loc) => (
-              <tr key={loc.id} className="border-t border-neutral-800">
+              <tr key={loc.id} className="border-t border-rule">
                 <td className="px-4 py-3">{loc.name}</td>
-                <td className="px-4 py-3 text-neutral-400">{loc.type.replace("_", " ")}</td>
-                <td className="px-4 py-3 text-neutral-400">
+                <td className="px-4 py-3 text-mute">{loc.type.replace("_", " ")}</td>
+                <td className="px-4 py-3 text-mute">
                   {findLocation(loc.parent_storage_id)?.name ?? "—"}
                 </td>
               </tr>
             ))}
             {locations.length === 0 && (
               <tr>
-                <td colSpan={3} className="px-4 py-6 text-center text-neutral-500">
+                <td colSpan={3} className="px-4 py-6 text-center text-mute">
                   No locations yet.
                 </td>
               </tr>
@@ -125,25 +122,25 @@ export default function LocationsPage() {
       </div>
 
       {showAddModal && (
-        <div className="fixed inset-0 flex items-center justify-center bg-black/60 p-4">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 p-4">
           <form
             onSubmit={handleAddLocation}
-            className="w-full max-w-md rounded-xl bg-neutral-900 p-6"
+            className="card w-full max-w-md p-6"
           >
             <h2 className="mb-4 text-lg font-semibold">Add Storage Location</h2>
 
             <div className="mb-3">
-              <label className="mb-1 block text-sm text-neutral-400">Name</label>
+              <label className="mb-1 block text-sm text-mute">Name</label>
               <input
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 required
-                className="w-full rounded-lg bg-neutral-800 px-3 py-2 text-sm text-white"
+                className="field"
               />
             </div>
 
             <div className="mb-3">
-              <label className="mb-1 block text-sm text-neutral-400">Type</label>
+              <label className="mb-1 block text-sm text-mute">Type</label>
               <select
                 value={type}
                 onChange={(e) => {
@@ -151,7 +148,7 @@ export default function LocationsPage() {
                   setParentStorage("");
                 }}
                 required
-                className="w-full rounded-lg bg-neutral-800 px-3 py-2 text-sm text-white"
+                className="field"
               >
                 <option value="">Select type</option>
                 {TYPES.map((t) => (
@@ -162,14 +159,14 @@ export default function LocationsPage() {
 
             {type === "unit" || type === "project_site" ? (
               <div className="mb-4">
-                <label className="mb-1 block text-sm text-neutral-400">
+                <label className="mb-1 block text-sm text-mute">
                   Parent {type === "unit" ? "(central store)" : "(unit)"}
                 </label>
                 <select
                   value={parentStorage}
                   onChange={(e) => setParentStorage(e.target.value)}
                   required
-                  className="w-full rounded-lg bg-neutral-800 px-3 py-2 text-sm text-white"
+                  className="field"
                 >
                   <option value="">Select parent</option>
                   {parentOptions().map((loc) => (
@@ -181,12 +178,12 @@ export default function LocationsPage() {
 
             {type === "project_site" ? (
               <div className="mb-4">
-                <label className="mb-1 block text-sm text-neutral-400">Project</label>
+                <label className="mb-1 block text-sm text-mute">Project</label>
                 <select
                   value={projectId}
                   onChange={(e) => setProjectId(e.target.value)}
                   required
-                  className="w-full rounded-lg bg-neutral-800 px-3 py-2 text-sm text-white"
+                  className="field"
                 >
                   <option value="">Select project</option>
                   {projects.map((p) => (
@@ -200,14 +197,14 @@ export default function LocationsPage() {
               <button
                 type="button"
                 onClick={() => setShowAddModal(false)}
-                className="rounded-lg px-4 py-2 text-sm text-neutral-400 hover:text-white"
+                className="btn-ghost"
               >
                 Cancel
               </button>
               <button
                 type="submit"
                 disabled={isSubmitting}
-                className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium hover:bg-blue-500 disabled:opacity-50"
+                className="btn-primary"
               >
                 {isSubmitting ? "Creating..." : "Create"}
               </button>
