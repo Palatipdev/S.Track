@@ -193,10 +193,16 @@ FormData(): used when the body contains a file (raw bytes). Regular inputs go as
 which reduces friction compared to typing
 - Open question I still have:
 
-### 2026-08-07 — <topic>
+### 2026-08-07 — Debugging JWK request. Grilling session with AI
 - What I learned (in my own words):
+  - All pages contain this bug where the server is still processing the user's token since server need to retrieve the token and parse to endpoint which delays and trigger "Token not exist" therefore a JWKs public key checking is used so that we directly match the token with the public key
+  - Voice to text with AI on architectural of system and database design.
 - Why it matters / where it applies:
+  - Frontend and Backend flow looked perfect but testing end to end will reveal edge cases that you may not be able to think about. Prior to this I have been skipping end to end test and just been writing pages.
+  - Today I realised something far more important than this project alone. Anyone can write code , start a business, do ecom. but the most single important question is presentation (speaking). Voice to text input are allowing me to practice that which will be very beneficial in demo displays and job interviews
 - Open question I still have:
+  - Still dont know what JWKs means and why having a function that checks that with the parameter is more efficient and will solve the problem of not checking in time before the browser load since both are essentially token fetching so I thought they would have the same time complexity
+    - ANSWER: supabase.auth.get_user() is a network round trip, while jwt.decode() = local CPU-only math  basically no network latency
 
 ### 2026-09-07 — <topic>
 - What I learned (in my own words):

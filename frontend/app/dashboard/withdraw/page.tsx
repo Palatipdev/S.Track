@@ -190,7 +190,7 @@ export default function WithdrawPage() {
             <button
               type="button"
               onClick={addLine}
-              className="mb-4 cursor-pointer text-sm font-medium text-ink hover:underline"
+              className="block cursor-pointer text-sm font-medium text-ink hover:underline"
             >
               + Add item
             </button>
@@ -200,7 +200,7 @@ export default function WithdrawPage() {
         <button
           type="submit"
           disabled={isSubmitting}
-          className="btn-primary"
+          className="btn-primary mt-6"
         >
           {isSubmitting ? "Submitting..." : "Submit Withdrawal"}
         </button>

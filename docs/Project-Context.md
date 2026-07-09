@@ -44,6 +44,10 @@
 
 ## Open Questions / TODO Backlog
 
+**═══ STRATEGIC PIVOT #2 (2026-07-09): SorTrack is now a mobile field-capture front-end for Pojjaman, NOT a standalone store system. Read the "Session 2026-07-09" entry below IN FULL before doing any product work. ═══**
+
+The family company already runs **Pojjaman (พจมาน)** — a mature Thai construction ERP that does BOQ, PR→PO, cost centers, a 5-level item catalog, multi-store inventory (withdraw/return/transfer), and full equipment lifecycle (depreciation, repair, write-off). SorTrack cannot and must not out-build it. The meeting reframed SorTrack's whole reason to exist: **the mobile-friendly, low-tech-friendly capture layer for site leaders and storage keepers**, reading PO/item data from Pojjaman (read-only SQL/API over VPN, granted in the meeting) and handing the office a copy-pastable output to log. Pojjaman = office system of record. SorTrack = field front door that feeds it. Details, gaps, and the new backlog are in the 2026-07-09 session entry.
+
 **PIVOT (2026-07-03): real requirements from the family company's manager. Read `Project-Spec-v2.md` first.** v1 request→approval→PO flow is demoted; new core is PO ingest → goods receipt w/ condition checklist → multi-location stock → withdrawal (เบิก) tracking.
 
 **Phase A: CORE DONE (2026-07-06/07).** Backend and frontend both wired end-to-end across all 8 v2 pages (dashboard/PO list, PO detail, receive, stock, withdraw, items, locations, shared layout shell). See README.md "v2 Pivot — Phase A" section for the full done-list.
@@ -278,6 +282,64 @@ Per Rule 9, running interview-style Q&A against the real codebase (not generic q
   - Receive page wrapped in `<Suspense>` — pre-existing `useSearchParams` prerender error blocked `next build`; unrelated to styling but fixed to keep build green.
 - **Unfinished**: pass 2 = user's manual visual review. Mobile bottom nav has 6 items (guideline max 5) — structural, deferred.
 - **Next**: run the app, eyeball every page, list modifications for pass 2.
+
+### Session 2026-07-09: Demo day + the Pojjaman discovery (STRATEGIC PIVOT #2)
+- **Goal**: Demo redesigned Phase A to the aunt/company over Zoom; explain phases; gather requirements. It turned into a ~5-hour meeting that reframed the entire product.
+
+- **The demo itself (went well)**:
+  - Seeded the demo DB with `sql/demo_seed.sql` (5 POs, honest mix: Open 2 / Partially Received 2 / Received 1, ฿64,000 total value — every "received" number backed by real `receipts` + `stock_movements` + rebuilt `stock_levels`, nothing faked) and `sql/demo_seed_multiloc.sql` (adds 2nd unit หน่วยเชียงใหม่ + leftover stock across สโตร์กลาง / หน่วยกรุงเทพ / หน่วยเชียงใหม่ via `adjust` movements, to show per-location remaining stock — the SaaS's weak spot). Both assume company id 1 + owner user id 1. A `TRUNCATE ... RESTART IDENTITY CASCADE` reset (keeps companies/users) was used to clear yesterday's hand-entered test data before seeding.
+  - Demoed live on Zoom screen-share. Blue/white redesign held up on the shared screen; seed data rendered correctly; phases explained.
+  - Fixed a spacing bug on the withdraw page mid-session ("+ Add item" was touching Submit; made it `block` + `mt-6` on the submit button).
+
+- **THE DISCOVERY — Pojjaman (พจมาน)**: the company runs a mature Thai construction ERP. Currently **v1** (desktop, on-prem, VPN-only, no mobile). **v2** is cloud-hosted/remote. What it already does, well: BOQ → PR → PO (with multi-reference linking, file attachments over FTP, approval chains, VAT/discount, cost centers as a project tree), a **5-level item category tree** (L1–3 = category/sub/sub-sub; L4–5 = actual item rows, L5 is the pickable item and its name is PO-grade official), **unit conversion defined per-item at creation**, `is_active` with sell-down (inactive item still withdrawable until stock hits 0 — confirms SorTrack's own grilling-derived design), multi-store inventory where **projects/units/central are all cost centers** (so project→project transfer works), withdraw / return / **transfer between cost centers** (site→unit→central), condition-based returns (only same-quality accepted; **cut material gets a NEW item code**), random inspection/stocktake, and a full **equipment lifecycle** (cost-per-day, depreciation, repair status, write-off, per-warehouse status report). Access control: per-user CRUD (see/edit/add/delete) per category + per-project visibility — but "no trace log, can only restore who edited" (**SorTrack's append-only movement ledger is genuinely stronger here**).
+  - Emotional/process note: user was rattled ("blown out of the water") mid-meeting — Pojjaman already does most of SorTrack's planned Phase A/B/C. Recovered by turning every criticism into a *question* that made the vendor reveal his own gaps (the grilling method aimed outward). Worth tracking for grilling-progress (`feedback_grilling_method.md`) — this was the method working under real pressure.
+
+- **WHERE POJJAMAN FAILS (SorTrack's niche, confirmed by the vendor himself)**:
+  - **Mobile UI does not adapt** — v2 technically runs on a phone but the vendor explicitly does NOT recommend it and told the room to build a proper mobile UI instead.
+  - **No offline mode** — everything requires a live connection. Construction sites have bad signal.
+  - **Photos** from mobile gallery are possible but he still says don't use mobile.
+  - **Concurrent-user cap: 30**; **per-seat licensing** (the adoption killer — can't afford a seat for every unit/worker).
+  - **The real company pain**: field data (PO submission, receipts, withdrawals) never gets entered because workers use LINE and nobody keys it into Pojjaman. The features exist but rot unused because they're inaccessible to low-tech field workers. **Adoption, not features, is the unsolved problem — and that is exactly SorTrack's territory.**
+
+- **THE INTEGRATION PATH (the big win)**:
+  - Vendor granted **read-only API + direct SQL access** to Pojjaman's DB (read-only, no write — protects their DB; removes the hardest problem, bidirectional-sync conflicts).
+  - Connection is **via VPN through a server**. Architecture implication: SorTrack's **backend bridges** — `Pojjaman DB → (VPN) → FastAPI backend → (HTTPS) → mobile`. The phone NEVER touches Pojjaman directly, so Pojjaman's own "VPN kills mobile" limitation does not affect SorTrack.
+  - Vendor will **copy the current DB into a test DB** for SorTrack development (don't build against live prod).
+  - Contact channel: **LINE** exchanged for schema/follow-up questions.
+  - PO export caveat: manual CSV is possible but the **item code only reliably comes out in PDF**, not CSV; and export is **manual, no auto**. This is why the read-only SQL/API path matters — it beats file export.
+
+- **THE NEW PRODUCT THESIS**: SorTrack STOPS being a standalone store system. It becomes the **mobile field-capture front-end**: read PO + item data from Pojjaman → storage keeper checks against the physical receipt on mobile, keys qty / condition / notes / photos → SorTrack produces a **trackable, copy-pastable output** → back office keys it into Pojjaman (the official record). Because access is **read-only**, "send output to office" is a **human handoff** (office re-keys, or pastes a SorTrack-generated block shaped like Pojjaman's import), NOT an automatic write.
+
+- **What this RETIRES from SorTrack's own scope**:
+  - Add PO / Add Item authoring → downgraded to a **manual fallback only**; the real path is read/ingest from Pojjaman.
+  - Equipment lifecycle (was Phase C) → **DELETED**. Pojjaman owns it. SorTrack at most captures a field-side status change (worker marks a tool "broken"/"sent for repair" on mobile) for the office to log.
+  - Full 5-level category system → Pojjaman owns it; SorTrack reads item codes.
+  - Stock as system-of-record → **likely Pojjaman's**; SorTrack becomes a capture buffer + field-friendly live-stock viewer. **CONFIRM with aunt who owns stock truth.**
+
+- **NEW requirements the aunt surfaced (for the capture app / future phases)**:
+  - Cross-unit / cross-project **stock visibility** (a unit sees other units'/projects' stock to request transfers).
+  - **Transfer request between units**, mobile (การโอนวัสดุ / P-05), with destination-approves-receipt.
+  - **Notifications** (central/manager notifies units about a transfer; unit-to-unit requests).
+  - **Shelf-level / sub-location** within a store (free text — "raisins on shelf 1"; big yard, big items).
+  - **Random inspection / stocktake** (central spot-checks physical vs system — SorTrack's `adjust` movement already supports this).
+  - **Weekly material plan (P-01)** linked to finance (foreman files what they'll use next week, per project, qty, cost; finance is currently blind to upcoming spend). She wants this — possibly SorTrack's, possibly Pojjaman's; undecided.
+  - **Return → inspect → repair → reuse → dispose loop (P-06)** — her original #1 value; condition-based returns.
+  - **Buy-check chain (P-01→P-02)**: project checks own stock → unit → other units/projects → central → only then raise a purchase; central approves transfers of existing stock and tracks receipt.
+  - **Immediate blocker she named**: POs aren't even entered into the system today (sent via LINE); step one is forcing PO/request capture into the app so it's not lost in chat.
+  - **QR reframed**: since only the designated storage keeper logs in, QR is NOT for worker access — it's **scan-to-identify** (physical item ↔ system record; scan to receive/withdraw/inspect), and must happen INSIDE the keeper's authenticated session (not a public link).
+
+- **Design answers Pojjaman handed us (adopt these)**:
+  - Unit consistency (SorTrack's long-open question): Pojjaman defines **conversion per-item at creation**. Adopt this approach.
+  - Separate item code per spec/conversion variant (e.g. each ไม้สัก length) — matches SorTrack's per-variant `items` row design.
+  - Access control (CRUD + project visibility) is a real SorTrack gap → Phase B.
+
+- **Unfinished / immediate next steps (do these first next session, NOT more code)**:
+  1. **Open the test DB** (once vendor sends it) and **map Pojjaman's schema** — which tables hold POs, PO lines, items, item codes, cost centers, suppliers. Ask on LINE if stuck.
+  2. **Get the copy-paste-back format from the aunt** — which Pojjaman screen does the office paste into, and what columns? This defines SorTrack's output.
+  3. **Confirm with aunt: who owns stock truth** (Pojjaman vs SorTrack).
+  4. Then write the **boundary doc**: App owns / Pojjaman owns / ask — covering inventory, mobile receive/withdraw, transfers, access control, category tree, PR→PO, BOQ, cost/accounting, weekly plan, equipment.
+- **LinkedIn**: captured a live Zoom meeting photo + an app screenshot (during screen-share). Before posting: get consent for faces in the meeting photo, retake a clean app screenshot (current one has VS Code / localhost / screen-share chrome), and caption it **SorTrack** (memory `project_name_sortrack.md`), not S.Track.
+- **Next**: the four "immediate next steps" above, in order. No new feature code until the schema is mapped and the boundary is decided — building against a guessed Pojjaman format is the trap.
 
 <!--
 Template for the next session:
