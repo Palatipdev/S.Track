@@ -20,11 +20,20 @@ supabase_admin = create_client(
 )
 
 JWKS_URL = f"{os.getenv('SUPABASE_URL')}/auth/v1/.well-known/jwks.json"
-_jwks_cache = requests.get(JWKS_URL).json()
+_jwks_cache = None
+
+def get_jwks():
+    # Fetch and cache the signing keys lazily on first use. Doing this at import
+    # time means one transient network blip on startup crashes the whole app;
+    # fetching on demand keeps the service up and degrades a single request instead.
+    global _jwks_cache
+    if _jwks_cache is None:
+        _jwks_cache = requests.get(JWKS_URL, timeout=10).json()
+    return _jwks_cache
 
 def find_signing_key(token: str):
     token_header = jwt.get_unverified_header(token)
-    for key in _jwks_cache["keys"]:
+    for key in get_jwks()["keys"]:
         if key["kid"] == token_header["kid"]:
             return key
     return None
@@ -35,7 +44,13 @@ def get_current_user(
 ) -> User:
     token = credentials.credentials
 
-    signing_key = find_signing_key(token)
+    try:
+        signing_key = find_signing_key(token)
+    except requests.RequestException:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="Auth key service temporarily unavailable",
+        )
     if not signing_key:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token")
 
