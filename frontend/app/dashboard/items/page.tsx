@@ -1,4 +1,5 @@
 "use client";
+import { API_BASE } from "@/lib/api";
 import { getToken } from "@/lib/auth";
 import { useSubmitGuard } from "@/lib/useSubmitGuard";
 import { fetchJson } from "@/lib/fetchJson";
@@ -29,7 +30,7 @@ export default function ItemsPage() {
   async function fetchItems() {
     const token = await getToken();
     if (!token) return;
-    setItems(await fetchJson<Item[]>("http://localhost:8000/items", {
+    setItems(await fetchJson<Item[]>(`${API_BASE}/items`, {
       headers: { Authorization: `Bearer ${token}` },
     }));
   }
@@ -44,7 +45,7 @@ export default function ItemsPage() {
       const token = await getToken();
       if (!token) return;
 
-      await fetch("http://localhost:8000/items", {
+      await fetch(`${API_BASE}/items`, {
         method: "POST",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
         body: JSON.stringify({

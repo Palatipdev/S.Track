@@ -1,4 +1,5 @@
 "use client";
+import { API_BASE } from "@/lib/api";
 import { getToken } from "@/lib/auth";
 import { useSubmitGuard } from "@/lib/useSubmitGuard";
 import { fetchJson } from "@/lib/fetchJson";
@@ -32,9 +33,9 @@ export default function WithdrawPage() {
     const headers = { Authorization: `Bearer ${token}` };
 
     const [fetchedLocations, fetchedProjects, fetchedItems] = await Promise.all([
-      fetchJson<StorageLocation[]>("http://localhost:8000/storage_location", { headers }),
-      fetchJson<Project[]>("http://localhost:8000/projects", { headers }),
-      fetchJson<Item[]>("http://localhost:8000/items", { headers }),
+      fetchJson<StorageLocation[]>(`${API_BASE}/storage_location`, { headers }),
+      fetchJson<Project[]>(`${API_BASE}/projects`, { headers }),
+      fetchJson<Item[]>(`${API_BASE}/items`, { headers }),
     ]);
 
     setLocations(fetchedLocations);
@@ -51,7 +52,7 @@ export default function WithdrawPage() {
     if (!token) return;
     const headers = { Authorization: `Bearer ${token}` };
 
-    setStockLevels(await fetchJson<StockLevel[]>(`http://localhost:8000/stock_level/${locationId}`, { headers }));
+    setStockLevels(await fetchJson<StockLevel[]>(`${API_BASE}/stock_level/${locationId}`, { headers }));
   }
 
   useEffect(() => {
@@ -87,7 +88,7 @@ export default function WithdrawPage() {
       const token = await getToken();
       if (!token) return;
 
-      await fetch("http://localhost:8000/withdrawal", {
+      await fetch(`${API_BASE}/withdrawal`, {
         method: "POST",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
         body: JSON.stringify({

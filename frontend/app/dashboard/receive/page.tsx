@@ -1,4 +1,5 @@
 "use client";
+import { API_BASE } from "@/lib/api";
 import { getToken } from "@/lib/auth";
 import { useSubmitGuard } from "@/lib/useSubmitGuard";
 import { fetchJson } from "@/lib/fetchJson";
@@ -67,12 +68,12 @@ function ReceiveForm() {
     const headers = { Authorization: `Bearer ${token}` };
 
     const [allPOs, fetchedPOItems, fetchedItems, fetchedLocations, fetchedProjects, fetchedSuppliers] = await Promise.all([
-      fetchJson<PurchaseOrder[]>("http://localhost:8000/purchase-orders", { headers }),
-      fetchJson<POItem[]>(`http://localhost:8000/purchase-orders/${poId}/po-items`, { headers }),
-      fetchJson<Item[]>("http://localhost:8000/items", { headers }),
-      fetchJson<StorageLocation[]>("http://localhost:8000/storage_location", { headers }),
-      fetchJson<Project[]>("http://localhost:8000/projects", { headers }),
-      fetchJson<Supplier[]>("http://localhost:8000/suppliers", { headers }),
+      fetchJson<PurchaseOrder[]>(`${API_BASE}/purchase-orders`, { headers }),
+      fetchJson<POItem[]>(`${API_BASE}/purchase-orders/${poId}/po-items`, { headers }),
+      fetchJson<Item[]>(`${API_BASE}/items`, { headers }),
+      fetchJson<StorageLocation[]>(`${API_BASE}/storage_location`, { headers }),
+      fetchJson<Project[]>(`${API_BASE}/projects`, { headers }),
+      fetchJson<Supplier[]>(`${API_BASE}/suppliers`, { headers }),
     ]);
 
     setPO(allPOs.find((p) => p.id === Number(poId)) ?? null);
@@ -123,7 +124,7 @@ function ReceiveForm() {
       const token = await getToken();
       if (!token || !po) return;
 
-      await fetch("http://localhost:8000/receipt", {
+      await fetch(`${API_BASE}/receipt`, {
         method: "POST",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
         body: JSON.stringify({

@@ -1,4 +1,5 @@
 "use client";
+import { API_BASE } from "@/lib/api";
 import { getToken } from "@/lib/auth";
 import { useSubmitGuard } from "@/lib/useSubmitGuard";
 import { fetchJson } from "@/lib/fetchJson";
@@ -34,8 +35,8 @@ export default function LocationsPage() {
     const headers = { Authorization: `Bearer ${token}` };
 
     const [fetchedLocations, fetchedProjects] = await Promise.all([
-      fetchJson<StorageLocation[]>("http://localhost:8000/storage_location", { headers }),
-      fetchJson<Project[]>("http://localhost:8000/projects", { headers }),
+      fetchJson<StorageLocation[]>(`${API_BASE}/storage_location`, { headers }),
+      fetchJson<Project[]>(`${API_BASE}/projects`, { headers }),
     ]);
 
     setLocations(fetchedLocations);
@@ -58,7 +59,7 @@ export default function LocationsPage() {
       const token = await getToken();
       if (!token) return;
 
-      await fetch("http://localhost:8000/storage_location", {
+      await fetch(`${API_BASE}/storage_location`, {
         method: "POST",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
         body: JSON.stringify({
