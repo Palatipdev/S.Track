@@ -15,8 +15,8 @@ const plexMono = IBM_Plex_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "S.Track",
-  description: "ระบบติดตามวัสดุ ส.บุญมีฤทธิ์วิศวกรรม",
+  title: "SorTrack",
+  description: "Materials procurement & inventory management",
 };
 
 export default function RootLayout({

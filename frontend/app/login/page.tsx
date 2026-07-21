@@ -34,7 +34,7 @@ export default function LoginPage() {
         <div className="flex min-h-screen items-center justify-center bg-mist px-4">
             <form onSubmit={handleSubmit} className="card w-full max-w-sm p-8">
                 <div className="mb-6">
-                    <div className="text-2xl font-semibold text-ink-deep">S.Track</div>
+                    <div className="text-2xl font-semibold text-ink-deep">SorTrack</div>
                     <div className="mt-2 border-t-2 border-ink" />
                     <div className="mt-[2px] border-t border-rule" />
                     <p className="mt-2 text-xs text-mute">Materials Procurement &amp; Inventory</p>

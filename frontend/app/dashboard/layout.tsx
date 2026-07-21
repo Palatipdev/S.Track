@@ -27,7 +27,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       {/* Desktop sidebar */}
       <aside className="hidden md:flex md:w-60 md:flex-col md:border-r md:border-rule md:bg-paper md:px-4 md:py-6">
         <div className="mb-8 px-2">
-          <div className="text-lg font-semibold text-ink-deep">S.Track</div>
+          <div className="text-lg font-semibold text-ink-deep">SorTrack</div>
           <div className="mt-1 border-t-2 border-ink" />
           <div className="mt-[2px] border-t border-rule" />
           <div className="mt-1.5 text-[11px] text-mute">ส.บุญมีฤทธิ์วิศวกรรม</div>
