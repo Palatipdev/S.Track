@@ -4,17 +4,25 @@ import React, { useState } from "react"
 import { supabase } from "@/lib/supabase"
 import { useRouter } from "next/navigation"
 
+// Demo credentials pre-filled so a viewer can sign in with one click.
+// Override in the deploy env with NEXT_PUBLIC_DEMO_EMAIL / NEXT_PUBLIC_DEMO_PASSWORD.
+const DEMO_EMAIL = process.env.NEXT_PUBLIC_DEMO_EMAIL ?? "demo@sortrack.app"
+const DEMO_PASSWORD = process.env.NEXT_PUBLIC_DEMO_PASSWORD ?? "sortrackdemo"
+
 export default function LoginPage() {
-    const [email, setEmail] = useState("")
-    const [password, setPassword] = useState("")
+    const [email, setEmail] = useState(DEMO_EMAIL)
+    const [password, setPassword] = useState(DEMO_PASSWORD)
     const [errorMsg, setErrorMsg] = useState("")
+    const [loading, setLoading] = useState(false)
     const router = useRouter()
     async function handleSubmit(e: React.FormEvent){
         e.preventDefault()
         setErrorMsg("")
+        setLoading(true)
         const {data, error} = await supabase.auth.signInWithPassword({email, password});
             if (error){
                 setErrorMsg("Email or password is incorrect. Check and try again.")
+                setLoading(false)
             } else{
                 router.push("/dashboard")
             }
@@ -29,7 +37,11 @@ export default function LoginPage() {
                     <div className="text-2xl font-semibold text-ink-deep">S.Track</div>
                     <div className="mt-2 border-t-2 border-ink" />
                     <div className="mt-[2px] border-t border-rule" />
-                    <p className="mt-2 text-xs text-mute">ระบบติดตามวัสดุ ส.บุญมีฤทธิ์วิศวกรรม</p>
+                    <p className="mt-2 text-xs text-mute">Materials Procurement &amp; Inventory</p>
+                </div>
+
+                <div className="mb-4 rounded-md border border-ink/30 bg-ink-soft px-3 py-2 text-xs text-ink-deep">
+                    Demo account is pre-filled. Just click Sign in.
                 </div>
 
                 <div className="mb-4">
@@ -64,7 +76,9 @@ export default function LoginPage() {
                     </p>
                 )}
 
-                <button type="submit" className="btn-primary w-full">Sign in</button>
+                <button type="submit" disabled={loading} className="btn-primary w-full">
+                    {loading ? "Signing in..." : "Sign in"}
+                </button>
             </form>
         </div>
     )
