@@ -1,4 +1,5 @@
 "use client";
+import { API_BASE } from "@/lib/api";
 import { supabase } from "@/lib/supabase";
 import { useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
@@ -72,12 +73,12 @@ export default function POdetail() {
     const headers = { Authorization: `Bearer ${token}` };
 
     const [allPOs, fetchedPOItems, catalog, fetchedLocations, fetchedSuppliers, fetchedProjects] = await Promise.all([
-      fetchJson<PurchaseOrder[]>("http://localhost:8000/purchase-orders", { headers }),
-      fetchJson<POItem[]>(`http://localhost:8000/purchase-orders/${poId}/po-items`, { headers }),
-      fetchJson<Item[]>("http://localhost:8000/items", { headers }),
-      fetchJson<StorageLocation[]>("http://localhost:8000/storage_location", { headers }),
-      fetchJson<Supplier[]>("http://localhost:8000/suppliers", { headers }),
-      fetchJson<Project[]>("http://localhost:8000/projects", { headers }),
+      fetchJson<PurchaseOrder[]>(`${API_BASE}/purchase-orders`, { headers }),
+      fetchJson<POItem[]>(`${API_BASE}/purchase-orders/${poId}/po-items`, { headers }),
+      fetchJson<Item[]>(`${API_BASE}/items`, { headers }),
+      fetchJson<StorageLocation[]>(`${API_BASE}/storage_location`, { headers }),
+      fetchJson<Supplier[]>(`${API_BASE}/suppliers`, { headers }),
+      fetchJson<Project[]>(`${API_BASE}/projects`, { headers }),
     ]);
 
     setPO(allPOs.find((p) => p.id === Number(poId)) ?? null);

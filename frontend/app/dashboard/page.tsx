@@ -1,4 +1,5 @@
 "use client";
+import { API_BASE } from "@/lib/api";
 import { supabase } from "@/lib/supabase";
 import { useState, useEffect } from "react";
 import { getToken } from "@/lib/auth";
@@ -62,11 +63,11 @@ export default function DashboardPO() {
     const headers = { Authorization: `Bearer ${token}` };
 
     const [fetchedPOs, fetchedSuppliers, fetchedProjects, fetchedItems, fetchedLocations] = await Promise.all([
-      fetchJson<PurchaseOrder[]>("http://localhost:8000/purchase-orders", { headers }),
-      fetchJson<Supplier[]>("http://localhost:8000/suppliers", { headers }),
-      fetchJson<Project[]>("http://localhost:8000/projects", { headers }),
-      fetchJson<Item[]>("http://localhost:8000/items", { headers }),
-      fetchJson<StorageLocation[]>("http://localhost:8000/storage_location", { headers }),
+      fetchJson<PurchaseOrder[]>(`${API_BASE}/purchase-orders`, { headers }),
+      fetchJson<Supplier[]>(`${API_BASE}/suppliers`, { headers }),
+      fetchJson<Project[]>(`${API_BASE}/projects`, { headers }),
+      fetchJson<Item[]>(`${API_BASE}/items`, { headers }),
+      fetchJson<StorageLocation[]>(`${API_BASE}/storage_location`, { headers }),
     ]);
 
     setPurchaseOrders(fetchedPOs);
@@ -101,7 +102,7 @@ export default function DashboardPO() {
       const token = await getToken();
       if (!token) return;
 
-      await fetch("http://localhost:8000/purchase-orders", {
+      await fetch(`${API_BASE}/purchase-orders`, {
         method: "POST",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
         body: JSON.stringify({
