@@ -40,10 +40,6 @@ export default function LoginPage() {
                     <p className="mt-2 text-xs text-mute">Materials Procurement &amp; Inventory</p>
                 </div>
 
-                <div className="mb-4 rounded-md border border-ink/30 bg-ink-soft px-3 py-2 text-xs text-ink-deep">
-                    Demo account is pre-filled. Just click Sign in.
-                </div>
-
                 <div className="mb-4">
                     <label htmlFor="email" className="mb-1 block text-sm text-mute">Email</label>
                     <input
