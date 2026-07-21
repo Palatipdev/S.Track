@@ -49,16 +49,20 @@ from fastapi.middleware.cors import CORSMiddleware
 import os
 
 # Allowed browser origins. Always permit local dev; add the deployed frontend
-# via FRONTEND_URL (comma-separated) in the deploy environment.
+# via FRONTEND_URL (comma-separated) in the deploy environment. Trailing slashes
+# are stripped because a browser Origin header never includes one.
 allowed_origins = ["http://localhost:3000"]
 frontend_url = os.getenv("FRONTEND_URL")
 if frontend_url:
-    allowed_origins += [o.strip() for o in frontend_url.split(",") if o.strip()]
+    allowed_origins += [o.strip().rstrip("/") for o in frontend_url.split(",") if o.strip()]
 
 app = FastAPI()
 app.add_middleware(
     CORSMiddleware,
     allow_origins=allowed_origins,
+    # Also allow this project's Vercel deployments (production + preview URLs),
+    # so a missing or misspelled FRONTEND_URL can't break the live demo.
+    allow_origin_regex=r"https://sortrack.*\.vercel\.app",
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
